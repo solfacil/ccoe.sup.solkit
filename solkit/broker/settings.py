@@ -1,11 +1,14 @@
 from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
-from .constants import BrokerKafkaAcks
-
-BROKER_HEARTBEAT_PER_SESSION = 4
+from .constants import (
+    BROKER_DEAD_LETTER_QUEUE_SUFFIX,
+    BROKER_HEARTBEAT_PER_SESSION,
+    BROKER_RETRY_SUFFIX,
+    BrokerKafkaAcks,
+)
 
 
 class BrokerKafkaSettings(BaseSettings):
@@ -78,10 +81,49 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
     #     description="Kafka isolation level",
     #     validation_alias="BROKER_ISOLATION_LEVEL"
     # )
+    retry_max_times: int = Field(
+        default=0,
+        ge=0,
+        le=3,
+        description="Kafka retry max times",
+        validation_alias="BROKER_RETRY_MAX_TIMES"
+    )
     
-    def parsed_topics(self) -> list[str]:
+    def __parsed_topics(self) -> list[str]:
         """Parse topics string into a list of topics."""
         return self.topics.split(",") if self.topics.find(",") > 0 else [self.topics]
+    
+    def __generate_retry_topics(self) -> list[str]:
+        """Generate retry topics."""
+        return [
+            f"{topic}{BROKER_RETRY_SUFFIX}{i}" 
+            for topic in self.__parsed_topics() 
+            for i in range(1, self.retry_max_times + 1)
+        ]
+
+    def __generate_dead_letter_queue_topics(self) -> list[str]:
+        """Generate dead letter queue topics."""
+        return [
+            f"{topic}{BROKER_DEAD_LETTER_QUEUE_SUFFIX}" 
+            for topic in self.__parsed_topics()
+        ]
+    
+    def get_topics(self) -> list[str]:
+        """Create a list of topics with retry and dead letter queue topics."""
+        topics = self.__parsed_topics()
+        topics.extend(self.__generate_retry_topics())
+        topics.extend(self.__generate_dead_letter_queue_topics())
+        return topics
+    
+    @field_validator("topics", mode="after")
+    def validate_topics_names(self, topics: str) -> str:
+        """Validate topics names with uppercase letters and hyphens."""
+        for topic in self.__parsed_topics():
+            if not all(c.isupper() or c in '-' for c in topic):
+                raise ValueError(
+                    f"Topic '{topic}' must contain only uppercase letters and hyphens"
+                )
+        return topics
     
     @model_validator(mode="after")
     def validate_kafka_session_pool_timeouts(self) -> Self:
