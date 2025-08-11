@@ -89,15 +89,16 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         validation_alias="BROKER_RETRY_MAX_TIMES"
     )
     
-    def __parsed_topics(self) -> list[str]:
+    @staticmethod
+    def __parse_topics(topics: str) -> list[str]:
         """Parse topics string into a list of topics."""
-        return self.topics.split(",") if self.topics.find(",") > 0 else [self.topics]
+        return topics.split(",") if topics.find(",") > 0 else [topics]
     
     def __generate_retry_topics(self) -> list[str]:
         """Generate retry topics."""
         return [
             f"{topic}{BROKER_RETRY_SUFFIX}{i}" 
-            for topic in self.__parsed_topics() 
+            for topic in self.__parse_topics(self.topics) 
             for i in range(1, self.retry_max_times + 1)
         ]
 
@@ -105,20 +106,22 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         """Generate dead letter queue topics."""
         return [
             f"{topic}{BROKER_DEAD_LETTER_QUEUE_SUFFIX}" 
-            for topic in self.__parsed_topics()
+            for topic in self.__parse_topics(self.topics)
         ]
     
     def get_topics(self) -> list[str]:
         """Create a list of topics with retry and dead letter queue topics."""
-        topics = self.__parsed_topics()
-        topics.extend(self.__generate_retry_topics())
+        topics = self.__parse_topics(self.topics)
         topics.extend(self.__generate_dead_letter_queue_topics())
+        if self.retry_max_times > 0:
+            topics.extend(self.__generate_retry_topics())
         return topics
     
     @field_validator("topics", mode="after")
-    def validate_topics_names(self, topics: str) -> str:
+    @classmethod
+    def validate_topics_names(cls, topics: str) -> str:
         """Validate topics names with uppercase letters and hyphens."""
-        for topic in self.__parsed_topics():
+        for topic in cls.__parse_topics(topics):
             if not all(c.isupper() or c in '-' for c in topic):
                 raise ValueError(
                     f"Topic '{topic}' must contain only uppercase letters and hyphens"
@@ -126,14 +129,14 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         return topics
     
     @model_validator(mode="after")
-    def validate_kafka_session_pool_timeouts(self) -> Self:
+    def validate_session_pool_timeouts(self) -> Self:
         """Validate Kafka session and pool timeouts."""
         if self.max_poll_interval_ms < self.session_timeout_ms:
             raise ValueError("Kafka session max poll interval must be greater than session timeout")
         return self
         
     @model_validator(mode="after")
-    def validate_kafka_session_heartbeat(self) -> Self:
+    def validate_session_heartbeat(self) -> Self:
         """Validate Kafka session heartbeat.
         
         - each session must have at least 3 heartbeat to ensure consumers it's alive
