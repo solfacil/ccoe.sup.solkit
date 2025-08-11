@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 
 from .constants import BrokerKafkaAcks
 
+BROKER_HEARTBEAT_PER_SESSION = 4
+
 
 class BrokerKafkaSettings(BaseSettings):
     """Base settings for Kafka."""
@@ -78,14 +80,14 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
     # )
     
     def parsed_topics(self) -> list[str]:
-        """Parse topics."""
+        """Parse topics string into a list of topics."""
         return self.topics.split(",") if self.topics.find(",") > 0 else [self.topics]
     
     @model_validator(mode="after")
     def validate_kafka_session_pool_timeouts(self) -> Self:
         """Validate Kafka session and pool timeouts."""
-        if self.max_poll_interval_ms > self.session_timeout_ms:
-            raise ValueError("Kafka session and pool timeouts are not valid")
+        if self.max_poll_interval_ms < self.session_timeout_ms:
+            raise ValueError("Kafka session max poll interval must be greater than session timeout")
         return self
         
     @model_validator(mode="after")
@@ -94,8 +96,10 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         
         - each session must have at least 3 heartbeat to ensure consumers it's alive
         """
-        if self.session_timeout_ms / self.heartbeat_interval_ms < 3:
-            raise ValueError("Kafka session heartbeat is not valid")
+        if (self.session_timeout_ms / self.heartbeat_interval_ms) < BROKER_HEARTBEAT_PER_SESSION:
+            raise ValueError(
+                f"Kafka heartbeat per session must be greater than or equal to {BROKER_HEARTBEAT_PER_SESSION}"
+            )
         return self
 
 
