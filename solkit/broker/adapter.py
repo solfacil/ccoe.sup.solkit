@@ -16,6 +16,7 @@ class BrokerKafkaAdapter:
     
     @classmethod
     def producer_config(cls) -> "BrokerKafkaAdapter":
+        """Create a producer configuration."""
         producer_settings = BrokerKafkaProducerSettings()
         return cls(producer_settings=producer_settings)
     
@@ -30,6 +31,7 @@ class BrokerKafkaAdapter:
         producer_settings: BrokerKafkaProducerSettings | None = None,
         consumer_settings: BrokerKafkaConsumerSettings | None = None,
     ) -> None:
+        """Initialize the broker Kafka adapter."""
         self._producer_settings = producer_settings
         self._consumer_settings = consumer_settings
         self._producer: AIOKafkaProducer | None = None
@@ -67,26 +69,37 @@ class BrokerKafkaAdapter:
         logger.info(f"[ADAPTER][BROKER][TOPICS: {await self._consumer.topics()}]")
         # logger.info(f"[ADAPTER][BROKER][ASSIGNED PARTITIONS: {self._consumer.assignment()}]")
         
-    
     async def connect(self) -> None:
+        """Connect the producer and consumer."""
         logger.info(f"[ADAPTER][BROKER][BOOTSTRAP SERVERS: {self._producer_settings.bootstrap_servers}]")
         if self._producer_settings is not None:
             await self.__start_producer()
         if self._consumer_settings is not None:
             await self.__start_consumer()
     
+    @property
+    def producer(self) -> AIOKafkaProducer:
+        """Get the producer."""
+        return self._producer
+    
+    @property
+    def consumer(self) -> AIOKafkaConsumer:
+        """Get the consumer."""
+        return self._consumer
+    
     async def __disconnect_producer(self) -> None:
+        """Disconnect the producer."""
         if self._producer is not None:
             await self._producer.stop()
             self._producer = None
 
     async def __disconnect_consumer(self) -> None:
+        """Disconnect the consumer."""
         if self._consumer is not None:
             await self._consumer.stop()
             self._consumer = None
         
     async def disconnect(self) -> None:
-        if self._producer is not None:
-            await self.__disconnect_producer()
-        if self._consumer is not None:
-            await self.__disconnect_consumer()
+        """Disconnect the producer and consumer."""
+        await self.__disconnect_producer()
+        await self.__disconnect_consumer()
