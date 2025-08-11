@@ -3,7 +3,7 @@ from typing import Self
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
-from .contants import BrokerKafkaAcks
+from .constants import BrokerKafkaAcks
 
 
 class BrokerKafkaSettings(BaseSettings):
@@ -35,7 +35,7 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         validation_alias="BROKER_GROUP_ID"
     )
     # enable_auto_commit: bool = Field(
-    #     default=...,
+    #     default=False,
     #     description="Kafka enable auto commit",
     #     validation_alias="BROKER_ENABLE_AUTO_COMMIT"
     # )
@@ -80,19 +80,22 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
     def parsed_topics(self) -> list[str]:
         """Parse topics."""
         return self.topics.split(",") if self.topics.find(",") > 0 else [self.topics]
+    
+    @model_validator(mode="after")
+    def validate_kafka_session_pool_timeouts(self) -> Self:
+        """Validate Kafka session and pool timeouts."""
+        if self.max_poll_interval_ms > self.session_timeout_ms:
+            raise ValueError("Kafka session and pool timeouts are not valid")
+        return self
         
     @model_validator(mode="after")
-    def validate_kafka_consumer_timeouts(self) -> Self:
-        """Validate Kafka consumer timeouts.
+    def validate_kafka_session_heartbeat(self) -> Self:
+        """Validate Kafka session heartbeat.
         
-        - pool timeout -> session timeout should end before pool interval
         - each session must have at least 3 heartbeat to ensure consumers it's alive
         """
-        if not (
-            self.max_poll_interval_ms > self.session_timeout_ms
-            and self.session_timeout_ms / self.heartbeat_interval_ms >= 3
-        ):
-            raise ValueError("Kafka consumer timeouts are not valid")
+        if self.session_timeout_ms / self.heartbeat_interval_ms < 3:
+            raise ValueError("Kafka session heartbeat is not valid")
         return self
 
 
