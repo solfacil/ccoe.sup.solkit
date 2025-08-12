@@ -37,6 +37,11 @@ class BrokerRepository:
         if isinstance(message, dict):
             return bytes(json.dumps(message), "utf-8")
         return message
+    
+    # @staticmethod
+    # def __unparse_message_value(message: bytes) -> dict[str, Any]:
+    #     """Unparse the message value."""
+    #     return json.loads(message.decode("utf-8"))
 
     @property
     def __headers(self) -> list[tuple[str, bytes]]:
@@ -67,11 +72,13 @@ class BrokerRepository:
             return topic + BROKER_RETRY_SUFFIX + "1"
         
         elif topic.find(BROKER_RETRY_SUFFIX) > 0:
-            retry_attempt = int(topic.split(BROKER_RETRY_SUFFIX)[-1])
+            topic_name, retry_attempt = topic.split(BROKER_RETRY_SUFFIX)
+            retry_attempt = int(retry_attempt)
+            
             if retry_attempt < retry_max_times:
-                return topic + BROKER_RETRY_SUFFIX + f"{retry_attempt + 1}"
+                return topic_name + BROKER_RETRY_SUFFIX + f"{retry_attempt + 1}"
             else:
-                return topic + BROKER_DEAD_LETTER_QUEUE_SUFFIX
+                return topic_name + BROKER_DEAD_LETTER_QUEUE_SUFFIX
         
         elif topic.find(BROKER_DEAD_LETTER_QUEUE_SUFFIX) > 0:
             return None
