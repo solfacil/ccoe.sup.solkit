@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class BrokerKafkaAdapter:
+    """Broker Kafka adapter."""
     
     # @classmethod
     # def config_consumer(cls) -> "BrokerKafkaAdapter":
@@ -22,6 +23,7 @@ class BrokerKafkaAdapter:
     
     @classmethod
     def config(cls) -> "BrokerKafkaAdapter":
+        """Create a producer and consumer configuration."""
         producer_settings = BrokerKafkaProducerSettings()
         consumer_settings = BrokerKafkaConsumerSettings()
         return cls(producer_settings=producer_settings, consumer_settings=consumer_settings)
