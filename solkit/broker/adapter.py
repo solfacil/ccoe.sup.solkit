@@ -49,6 +49,7 @@ class BrokerKafkaAdapter:
         self._consumer = AIOKafkaConsumer(
             *self._consumer_settings.get_topics(),
             bootstrap_servers=self._consumer_settings.bootstrap_servers,
+            enable_auto_commit=self._consumer_settings.enable_auto_commit,
             request_timeout_ms=self._consumer_settings.request_timeout_ms,
             group_id=self._consumer_settings.group_id,
             max_poll_records=self._consumer_settings.max_poll_records,

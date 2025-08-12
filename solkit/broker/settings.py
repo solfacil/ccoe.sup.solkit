@@ -39,11 +39,11 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         description="Kafka group id",
         validation_alias="BROKER_GROUP_ID"
     )
-    # enable_auto_commit: bool = Field(
-    #     default=False,
-    #     description="Kafka enable auto commit",
-    #     validation_alias="BROKER_ENABLE_AUTO_COMMIT"
-    # )
+    enable_auto_commit: bool = Field(
+        default=False,
+        description="Kafka enable auto commit",
+        validation_alias="BROKER_ENABLE_AUTO_COMMIT"
+    )
     max_poll_records: int = Field(
         default=100,
         ge=1,
@@ -65,11 +65,6 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         default=(90*1000),
         description="Kafka session timeout ms",
         validation_alias="BROKER_SESSION_TIMEOUT_MS"
-    )
-    consumer_timeout_ms: int = Field(
-        default=200,
-        description="Kafka consumer timeout ms",
-        validation_alias="BROKER_CONSUMER_TIMEOUT_MS"
     )
     # rebalance_timeout_ms: int = Field(
     #     default=...,
