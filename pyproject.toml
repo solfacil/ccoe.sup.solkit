@@ -46,7 +46,7 @@ cache = [
     "redis>=6.2.0"
 ] 
 broker = [
-    "aiokafka>=0.12.0"
+    "aiokafka>=0.11.0"
 ]
 all = [
     "solkit[cache,broker]"
