@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -11,6 +12,9 @@ from solkit.common.trace_correlation_id import (
 )
 
 from .adapter import BrokerKafkaAdapter
+from .constants import BROKER_DEAD_LETTER_QUEUE_SUFFIX, BROKER_RETRY_SUFFIX
+
+logger = logging.getLogger(__name__)
 
 
 class BrokerRepository:
@@ -21,14 +25,18 @@ class BrokerRepository:
         self._adapter = adapter
         
     @staticmethod
-    def __parse_message_key(key: str) -> bytes:
+    def __parse_message_key(key: str | bytes) -> bytes:
         """Parse the message key."""
-        return bytes(key, "utf-8")
+        if isinstance(key, str):
+            return bytes(key, "utf-8")
+        return key
     
     @staticmethod
-    def __parse_message_value(message: dict[str, Any]) -> bytes:
+    def __parse_message_value(message: dict[str, Any] | bytes) -> bytes:
         """Parse the message value."""
-        return bytes(json.dumps(message), "utf-8")
+        if isinstance(message, dict):
+            return bytes(json.dumps(message), "utf-8")
+        return message
 
     @property
     def __headers(self) -> list[tuple[str, bytes]]:
@@ -44,20 +52,49 @@ class BrokerRepository:
                 set_trace_correlation_id(header[1].decode("utf-8"))
                 break
     
-    async def produce(self, topic: str, key: str, message: dict[str, Any]) -> None:
+    async def produce(self, topic: str, key: str | bytes, message: dict[str, Any] | bytes) -> None:
         """Produce a message to a Kafka topic."""
-        return await self._adapter.producer.send_and_wait(
+        await self._adapter.producer.send_and_wait(
             topic=topic, 
-            key=self.__parse_message_key(key),
-            value=self.__parse_message_value(message),
+            key=self.__parse_message_key(key), 
+            value=self.__parse_message_value(message), 
             headers=self.__headers,
         )
+        logger.info(f"[BROKER][REPOSITORY][PRODUCE - TOPIC: {topic} - KEY: {key}]")
     
+    def __get_retry_topic(self, topic: str, retry_max_times: int) -> str | None:
+        if topic.find(BROKER_RETRY_SUFFIX) == -1 and topic.find(BROKER_DEAD_LETTER_QUEUE_SUFFIX) == -1:
+            return topic + BROKER_RETRY_SUFFIX + "1"
+        
+        elif topic.find(BROKER_RETRY_SUFFIX) > 0:
+            retry_attempt = int(topic.split(BROKER_RETRY_SUFFIX)[-1])
+            if retry_attempt < retry_max_times:
+                return topic + BROKER_RETRY_SUFFIX + f"{retry_attempt + 1}"
+            else:
+                return topic + BROKER_DEAD_LETTER_QUEUE_SUFFIX
+        
+        elif topic.find(BROKER_DEAD_LETTER_QUEUE_SUFFIX) > 0:
+            return None
+        
+        return None
+
     async def consume(self, func: Callable[[ConsumerRecord], Awaitable[None]]) -> None:
         """Consume messages from a Kafka topic."""
         async for message in self._adapter.consumer:
             self.__get_correlation_id(message)
-            await func(message)
+            try:
+                logger.info(f"[BROKER][REPOSITORY][CONSUME - TOPIC: {message.topic} - KEY: {message.key}]")
+                await func(message)
+            except Exception as e:
+                logger.error(f"[BROKER][REPOSITORY][CONSUME - ERROR: {e}]")
+                if retry_topic := self.__get_retry_topic(
+                    message.topic,
+                    self._adapter._consumer_settings.retry_max_times,
+                ):
+                    await self.produce(topic=retry_topic, key=message.key, message=message.value)
+            finally:
+                await self._adapter.consumer.commit()
+                logger.info(f"[BROKER][REPOSITORY][COMMIT - TOPIC: {message.topic} - KEY: {message.key}]")
 
     # async def healthcheck(self) -> None:
     #     producer = await self._adapter._producer.send_and_wait("healthcheck", "healthcheck")
