@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Self
 
 from .settings import BrokerKafkaConsumerSettings, BrokerKafkaProducerSettings
 
@@ -13,20 +14,20 @@ class BrokerAdapterAbstract(ABC):
         consumer_settings: BrokerKafkaConsumerSettings | None = None,
     ) -> None:
         """Initialize the broker adapter."""
-        NotImplementedError()
+        raise NotImplementedError()
     
-    @abstractmethod
     @classmethod
-    def config(cls) -> "BrokerAdapterAbstract":
+    @abstractmethod
+    def config(cls) -> "Self":
         """Create a producer and consumer configuration."""
-        NotImplementedError()
+        raise NotImplementedError()
         
     @abstractmethod
     async def connect(self) -> None:
         """Connect the producer and consumer."""
-        NotImplementedError()
+        raise NotImplementedError()
     
     @abstractmethod
     async def disconnect(self) -> None:
         """Disconnect the producer and consumer."""
-        NotImplementedError()
+        raise NotImplementedError()
