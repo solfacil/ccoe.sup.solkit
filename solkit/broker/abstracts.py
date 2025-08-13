@@ -4,6 +4,7 @@ from .settings import BrokerKafkaConsumerSettings, BrokerKafkaProducerSettings
 
 
 class BrokerAdapterAbstract(ABC):
+    """Abstract class for the broker adapter."""
     
     @abstractmethod
     def __init__(
@@ -11,16 +12,21 @@ class BrokerAdapterAbstract(ABC):
         producer_settings: BrokerKafkaProducerSettings | None = None,
         consumer_settings: BrokerKafkaConsumerSettings | None = None,
     ) -> None:
-        ...
+        """Initialize the broker adapter."""
+        NotImplementedError()
     
     @abstractmethod
-    def config(self) -> "BrokerAdapterAbstract":
-        ...
+    @classmethod
+    def config(cls) -> "BrokerAdapterAbstract":
+        """Create a producer and consumer configuration."""
+        NotImplementedError()
         
     @abstractmethod
-    def connect(self) -> None:
-        ...
+    async def connect(self) -> None:
+        """Connect the producer and consumer."""
+        NotImplementedError()
     
     @abstractmethod
-    def disconnect(self) -> None:
-        ...
+    async def disconnect(self) -> None:
+        """Disconnect the producer and consumer."""
+        NotImplementedError()
