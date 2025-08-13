@@ -10,9 +10,10 @@ def get_trace_correlation_id() -> str | None:
     """Get the correlation ID from the context."""
     return trace_correlation_id_context.get()
 
-def set_trace_correlation_id(correlation_id: str) -> None:
+def set_trace_correlation_id(correlation_id: str) -> str:
     """Set the correlation ID in the context."""
     trace_correlation_id_context.set(correlation_id)
+    return correlation_id
 
 def create_trace_correlation_id() -> str:
     """Create a trace correlation ID for the current context."""
