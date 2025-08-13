@@ -2,12 +2,13 @@ import logging
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
+from .abstracts import BrokerAdapterAbstract
 from .settings import BrokerKafkaConsumerSettings, BrokerKafkaProducerSettings
 
 logger = logging.getLogger(__name__)
 
 
-class BrokerKafkaAdapter:
+class BrokerKafkaAdapter(BrokerAdapterAbstract):
     """Broker Kafka adapter."""
     
     # @classmethod
