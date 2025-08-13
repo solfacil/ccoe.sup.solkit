@@ -9,6 +9,7 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: name-tests-test
+        args: ["--pytest-test-first"]
       - id: no-commit-to-branch
         args: [--branch, main]
   #    - id: trailing-whitespace
@@ -21,7 +22,7 @@ repos:
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: ['-r', 'solkit']
+        args: ['--configfile', 'bandit.yaml']
 
   # 3. Ruff for linting and formatting
   # - repo: https://github.com/astral-sh/ruff-pre-commit
