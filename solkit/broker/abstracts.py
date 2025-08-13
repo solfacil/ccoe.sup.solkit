@@ -18,7 +18,13 @@ class BrokerAdapterAbstract(ABC):
     
     @classmethod
     @abstractmethod
-    def config(cls) -> "Self":
+    def producer_config(cls: type["BrokerAdapterAbstract"]) -> "BrokerAdapterAbstract":
+        """Create a producer configuration."""
+        raise NotImplementedError()
+    
+    @classmethod
+    @abstractmethod
+    def config(cls: type["BrokerAdapterAbstract"]) -> "BrokerAdapterAbstract":
         """Create a producer and consumer configuration."""
         raise NotImplementedError()
         
