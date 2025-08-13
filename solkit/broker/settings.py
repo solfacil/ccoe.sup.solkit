@@ -1,3 +1,4 @@
+import re
 from typing import Self
 
 from pydantic import Field, field_validator, model_validator
@@ -7,6 +8,7 @@ from .constants import (
     BROKER_DEAD_LETTER_QUEUE_SUFFIX,
     BROKER_HEARTBEAT_PER_SESSION,
     BROKER_RETRY_SUFFIX,
+    BROKER_TOPIC_PATTERN,
     BrokerKafkaAcks,
 )
 
@@ -117,9 +119,10 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
     def validate_topics_names(cls, topics: str) -> str:
         """Validate topics names with uppercase letters and hyphens."""
         for topic in cls.__parse_topics(topics):
-            if not all(c.isupper() or c in '-' for c in topic):
+            if not re.match(BROKER_TOPIC_PATTERN, topic):
                 raise ValueError(
-                    f"Topic '{topic}' must contain only uppercase letters and hyphens"
+                    f"Topic '{topic}' must contain only uppercase letters and hyphens",
+                    f"it must follow the regexpattern: {BROKER_TOPIC_PATTERN}"
                 )
         return topics
     
