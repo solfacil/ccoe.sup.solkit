@@ -1,11 +1,12 @@
 {
-    "pythonVersion": "3.12",
-    "pythonPlatform": "Linux",
-    "include": [
-        "solkit"
-    ],
-    "root": "solkit",
-    "exclude": [
-        "**/__pycache__",
-    ]
+  "exclude": [
+    "**/__pycache__"
+  ],
+  "include": [
+    "solkit"
+  ],
+  "pythonPlatform": "Linux",
+  "pythonVersion": "3.12",
+  "venv": ".venv",
+  "venvPath": "."
 }
