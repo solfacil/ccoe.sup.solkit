@@ -1,42 +1,59 @@
 
 # Solkit
 
-Solfacil Python packages and tools for cache and broker functionality.
-
-[Hatchlint Documentation](https://hatch.pypa.io/latest/)
+Solfacil Python Package with Resusable Code.
 
 ## Installation
 
-### Basic Installation
-
-#### With pip
+### With `pip`
 
 ```bash
+# from branch
 pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main
+
+# from release
+
+# with extras
 ```
 
-#### With Poetry
+### With `Poetry`
 
 ```bash
-poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main' 
+# from branch
+poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
+
+# from release
+
+# with extras
 ```
 
-### With Optional Dependencies
+> [!IMPORTANT]
+> Avaliable paackge extras:
+> `cache`, `broker`, `all`
 
-#### Redis Cache Support
+## Development
+
+### Setup
 
 ```bash
-pip install "solkit[redis]"
+# update package manager
+pip install --upgrade pip wheels virtualenv
+
+# create witrualenv
+virtualenv .venv
+
+# enable virtualenv
+.venv/bin/activate
 ```
 
-#### Kafka Broker Support
+### Install dependencies
 
 ```bash
-pip install "solkit[broker]"
+pip install -r requirements/development.txt
 ```
 
-#### All Optional Dependencies
+### Run tests
 
 ```bash
-pip install "solkit[all]"
+pytest tests
 ```
