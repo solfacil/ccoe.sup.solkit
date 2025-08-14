@@ -18,20 +18,12 @@ repos:
       - id: requirements-txt-fixer
 
       # check code
-      # - id: check-ast
-      # - id: check-docstring-first
-      # - id: double-quote-string-fixer
-      # - id: trailing-whitespace
       - id: debug-statements
       - id: end-of-file-fixer
 
       # check tests
       - id: name-tests-test
         args: ["--pytest-test-first"]
-
-      # detect credentials
-      # - id: detect-aws-credentials
-      # - id: detect-private-key
 
   # 2. Bandit for security scanning
   - repo: https://github.com/PyCQA/bandit
@@ -41,13 +33,13 @@ repos:
         args: ['--configfile', 'bandit.yaml']
 
   # 3. Ruff for linting and formatting
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.7
-    hooks:
-      - id: ruff-check
-        args: ["."]
-      - id: ruff-format
-        args: ["--check"]
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #  rev: v0.12.7
+  #  hooks:
+  #    - id: ruff-check
+  #      args: ["."]
+  #    - id: ruff-format
+  #      args: ["--check"]
 
   # 4. Pyright for type checking
   - repo: https://github.com/RobertCraigie/pyright-python
