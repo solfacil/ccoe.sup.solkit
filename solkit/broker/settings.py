@@ -22,7 +22,7 @@ class BrokerKafkaSettings(BaseSettings):
         validation_alias="BROKER_BOOTSTRAP_SERVERS"
     )
     request_timeout_ms: int = Field(
-        default=5000,
+        default=40*1000,
         description="Kafka request timeout ms",
         validation_alias="BROKER_REQUEST_TIMEOUT_MS"
     )
