@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class BrokerRepository:
     """Broker repository."""
     
-    def __init__(self, adapter: BrokerKafkaAdapter, metadata: dict[str, Any] | None = None) -> None:
+    def __init__(self, adapter: BrokerKafkaAdapter, metadata: dict[str, str] | None = None) -> None:
         """Initialize the broker repository."""
         self._adapter = adapter
         self._common_metadata = metadata
@@ -35,7 +35,7 @@ class BrokerRepository:
         return key
     
     @staticmethod
-    def _parse_message_value(data: dict[str, Any], metadata: dict[str, Any]) -> bytes:
+    def _parse_message_value(data: dict[str, Any], metadata: dict[str, str]) -> bytes:
         """Concatenate the data and metadata into a bytes object."""
         return bytes(json.dumps({"data": data, "metadata": metadata}), "utf-8")
 
@@ -111,7 +111,6 @@ class BrokerRepository:
     async def consume(self, func: Callable[[ConsumerRecord], Awaitable[None]], wait_time: int = 3) -> None:
         """Consume messages from a Kafka topic."""
         async for message in self._adapter.consumer:
-            # message: ConsumerRecord
             self._get_correlation_id(message)
             try:
                 logger.info(f"[BROKER][REPOSITORY][CONSUME - TOPIC: {message.topic} - KEY: {message.key}]")
@@ -120,14 +119,14 @@ class BrokerRepository:
             except Exception as err:
                 logger.error(f"[BROKER][REPOSITORY][CONSUME - ERROR: {err}]")
                 
-                if next_retry_topic := self._next_retry_topic(message.topic, self._adapter._consumer_settings.retry_max_times):
+                if next_retry_topic := self._next_retry_topic(message.topic, self._adapter._consumer_settings.retry_max_times):  # type: ignore
                     logger.info(f"[BROKER][REPOSITORY][RETRY - TOPIC: {next_retry_topic} - KEY: {message.key} - WAIT: {wait_time}]")
                     await asyncio.sleep(wait_time)
-                    value, metadata = self._unparse_message_value(message.value)
+                    value, metadata = self._unparse_message_value(message.value)  # type: ignore
                     metadata.update({"error": repr(err)})
                     await self.produce(
                         topic=next_retry_topic, 
-                        key=message.key, 
+                        key=message.key,  # type: ignore
                         value=value, 
                         metadata=metadata,
                     )
