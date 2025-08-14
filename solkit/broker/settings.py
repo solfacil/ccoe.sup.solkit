@@ -121,8 +121,7 @@ class BrokerKafkaConsumerSettings(BrokerKafkaSettings):
         for topic in cls._parse_topics(topics):
             if not re.match(BROKER_TOPIC_PATTERN, topic):
                 raise ValueError(
-                    f"Topic '{topic}' must contain only uppercase letters and hyphens",
-                    f"it must follow the regexpattern: {BROKER_TOPIC_PATTERN}"
+                    f"Topic '{topic}' must follow the regex pattern: {BROKER_TOPIC_PATTERN}"
                 )
         return topics
     
