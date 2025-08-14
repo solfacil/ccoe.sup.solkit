@@ -1,0 +1,36 @@
+[run]
+source = solkit
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */migrations/*
+    */venv/*
+    */env/*
+    */.venv/*
+    */.env/*
+    setup.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+    def __hash__
+    def __eq__
+    def __ne__
+    def __lt__
+    def __le__
+    def __gt__
+    def __ge__
+
+[html]
+directory = htmlcov
+title = Coverage Report
