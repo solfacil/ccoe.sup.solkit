@@ -46,14 +46,10 @@ from adapters.broker import broker_kafka_adapter, get_broker_session
 from apps.consumer.service import ConsumerService
 
 
-async def consumer(broker_session) -> None:
-    service = ConsumerService(BrokerRepository(broker_session))
-    await service.consume()
-
-
 async def main() -> None:
     await broker_kafka_adapter.connect()
-    await consumer(await get_broker_session())
+    broker = BrokerRepository(broker_kafka_adapter)
+    await broker.consume()
 
 
 if __name__ == "__main__":
@@ -63,23 +59,29 @@ if __name__ == "__main__":
 Expected Logs for Producer
 
 ```bash
-
+application         | INFO:__main__:Starting consumer
+application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][BOOTSTRAP SERVERS: kafka-broker-one:9092,kafka-broker-two:9093,kafka-broker-three:9094]
+application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][ACKS: all]
 ```
 
 Expected Logs for Consumer
 
 ```bash
-
+application         | INFO:__main__:Starting consumer
+application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][BOOTSTRAP SERVERS: kafka-broker-one:9092,kafka-broker-two:9093,kafka-broker-three:9094]
+application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][ACKS: all]
+application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][GROUP ID: app]
+application         | INFO:aiokafka.consumer.subscription_state:Updating subscribed topics to: frozenset({'TEST-DLQ', 'TEST', 'TEST-RETRY-1', 'TEST-RETRY-2', 'TEST-RETRY-3'})
 ```
 
 ## Configuration
 
 ### Common Parameters
 
-| Parameter              | Environment Variable         | Definition                                |
-|------------------------|------------------------------|-------------------------------------------|
-| bootstrap_servers      | BROKER_BOOTSTRAP_SERVERS     | Kafka bootstrap servers                   |
-| request_timeout_ms     | BROKER_REQUEST_TIMEOUT_MS    | Kafka request timeout in milliseconds     |
+| Parameter                    | Environment Variable               | Definition                                |
+|------------------------------|------------------------------------|-------------------------------------------|
+| bootstrap_servers            | BROKER_BOOTSTRAP_SERVERS           | Kafka bootstrap servers                   |
+| request_timeout_ms           | BROKER_REQUEST_TIMEOUT_MS          | Kafka request timeout in milliseconds     |
 
 ### Consumer Parameters
 
@@ -91,7 +93,8 @@ Expected Logs for Consumer
 | max_poll_interval_ms         | BROKER_MAX_POLL_INTERVAL_MS        | Maximum poll interval in milliseconds     |
 | heartbeat_interval_ms        | BROKER_HEARTBEAT_INTERVAL_MS       | Heartbeat interval in milliseconds        |
 | session_timeout_ms           | BROKER_SESSION_TIMEOUT_MS          | Session timeout in milliseconds           |
-| consumer_timeout_ms          | BROKER_CONSUMER_TIMEOUT_MS         | Consumer timeout in milliseconds          |
+| retry_max_times              | BROKER_RETRY_MAX_TIMES             |                                           |
+| enable_auto_commit           |                                    |                                           |
 
 ### Producer Parameters
 
