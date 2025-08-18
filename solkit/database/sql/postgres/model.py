@@ -41,6 +41,7 @@ class BaseModel(DeclarativeBase):
 
 class EntityModel(BaseModel):
     """Entity base model."""
+    __abstract__ = True
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
