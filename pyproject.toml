@@ -51,7 +51,8 @@ broker = [
 ]
 postgres = [
     "SQLAlchemy==2.0.43",
-    "psycopg2-binary==2.9.10"
+    "psycopg2-binary==2.9.10",
+    "asyncpg==0.30.0"
 ]
 all = [
     "solkit[cache,broker,postgres]"
