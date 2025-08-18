@@ -36,10 +36,10 @@ else:
     cache = create_placeholder_module("cache")
     sys.modules[__name__ + '.cache'] = cache
 
-# Conditionally import postgres module
+# Conditionally import database.sql module
 if importlib.util.find_spec("sqlalchemy") is not None:
-    from .database.sql import postgres
-    __all__.append("postgres")
+    from . import database
+    __all__.append("database")
 else:
-    postgres = create_placeholder_module("postgres")
-    sys.modules[__name__ + '.postgres'] = postgres
+    database = create_placeholder_module("database")
+    sys.modules[__name__ + '.database'] = create_placeholder_module("database.sql")
