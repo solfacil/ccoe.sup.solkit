@@ -18,3 +18,6 @@ format.quote-style = "single"
 format.indent-style = "space"
 format.docstring-code-format = true
 format.docstring-code-line-length = 60
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]  # Ignore assert statements in test files

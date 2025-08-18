@@ -5,14 +5,25 @@ build-backend = "hatchling.build"
 [project]
 name = "solkit"
 version = "0.1.0"
+requires-python = ">=3.11"
 description = "Solfacil Python packages and tools"
 authors = [
     {name = "Solfacil", email = "dev@solfacil.com.br"}
 ]
-readme = "README.md"
-requires-python = ">=3.11"
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+keywords = ["python", "package"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
 dependencies = [
-    "redis>=6.2.0",
+    "pydantic>=2.0.0",
     "pydantic-settings>=2.10.1"
 ]
 
@@ -26,5 +37,18 @@ include = [
     "solkit"
 ]
 
+[project.urls]
+Homepage = "https://github.com/solfacil/solkit"
+Repository = "https://github.com/solfacil/solkit"
+Documentation = "https://github.com/solfacil/solkit#readme"
+
 [project.optional-dependencies]
-cache = ["cache"]
+cache = [
+    "redis>=6.2.0"
+] 
+broker = [
+    "aiokafka>=0.11.0"
+]
+all = [
+    "solkit[cache,broker]"
+]
