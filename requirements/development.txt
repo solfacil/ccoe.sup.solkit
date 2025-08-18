@@ -2,3 +2,8 @@ bandit==1.8.6
 pre_commit==4.2.0
 pyright==1.1.403
 ruff==0.12.7
+pytest==8.3.4
+pytest-asyncio==0.23.5
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+freezegun==1.5.5

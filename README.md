@@ -1,49 +1,59 @@
 
-# Solkit - Solfacil Python Packages
+# Solkit
+
+Solfacil Python Package with Resusable Code.
 
 ## Installation
 
-### pip
+### With `pip`
 
 ```bash
-pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main
+# from branch
+pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main
+
+# from release
+
+# with extras
 ```
 
-### poetry
+### With `Poetry`
 
 ```bash
-poetry add git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main
+# from branch
+poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
+
+# from release
+
+# with extras
 ```
 
-## Contributing
+> [!IMPORTANT]
+> Avaliable paackge extras:
+> `cache`, `broker`, `all`
 
-Install `virtualenv`
+## Development
 
-```bash
-pip install virtualenv
-```
-
-Create virtual environment
+### Setup
 
 ```bash
+# update package manager
+pip install --upgrade pip wheels virtualenv
+
+# create witrualenv
 virtualenv .venv
+
+# enable virtualenv
+.venv/bin/activate
 ```
 
-Enable virtual environment
-
-```bash
-source .venv/bin/activate
-```
-
-Install development dependencies
+### Install dependencies
 
 ```bash
 pip install -r requirements/development.txt
 ```
 
-Enable Pre Commit Hooks
+### Run tests
 
 ```bash
-pre-commit install
-pre-commit autoupdate
+pytest tests
 ```
