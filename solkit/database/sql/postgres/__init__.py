@@ -1,13 +1,9 @@
 """Database PostgreSQL module."""
 
-from .adapter import DatabasePostgreSQLAdapter
-from .protocols import DatabasePostgreSQLRepositoryProtocol
-from .repository import DatabasePostgreSQLRepository
-from .settings import DatabasePostgreSQLSettings
+from .adapter import DatabasePostgresAdapter
+from .settings import DatabasePostgresSettings
 
 __all__ = [
-    "DatabasePostgreSQLAdapter",
-    "DatabasePostgreSQLSettings",
-    "DatabasePostgreSQLRepository",
-    "DatabasePostgreSQLRepositoryProtocol",
+    "DatabasePostgresAdapter",
+    "DatabasePostgresSettings",
 ]
