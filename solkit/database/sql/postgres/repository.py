@@ -20,7 +20,7 @@ from .model import EntityModel
 class DatabasePostgreSQLRepository:
     """Repository for the database."""
     
-    def __init__(self, database_session: AsyncSession, model: type[EntityModel]) -> None:
+    def __init__(self, database_session: AsyncSession, model: type[EntityModel] | None) -> None:
         """Initialize the database repository."""
         self._database_session = database_session
         self._model = model
@@ -31,6 +31,8 @@ class DatabasePostgreSQLRepository:
     
     async def get_by_id(self, model_id: int | str) -> Row[tuple[EntityModel]] | None:
         """Get a model by id."""
+        if self._model is None:
+            raise ValueError("Model is not set")
         stmt = select(self._model).where(self._model.id == model_id)
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
@@ -38,6 +40,8 @@ class DatabasePostgreSQLRepository:
     
     async def insert(self, data: dict[str, Any]) -> Row[tuple[EntityModel]] | None:
         """Insert a model."""
+        if self._model is None:
+            raise ValueError("Model is not set")
         stmt = insert(self._model).values(data).returning(self._model)
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
@@ -45,6 +49,8 @@ class DatabasePostgreSQLRepository:
         
     async def update(self, model_id: int | str, data: dict[str, Any]) -> Row[tuple[EntityModel]] | None:
         """Update a model by id."""
+        if self._model is None:
+            raise ValueError("Model is not set")
         stmt = update(self._model).where(self._model.id == model_id).values(data).returning(self._model)
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
@@ -52,12 +58,16 @@ class DatabasePostgreSQLRepository:
     
     async def delete(self, model_id: int | str) -> Row[tuple[EntityModel]] | None:
         """Delete a model."""
+        if self._model is None:
+            raise ValueError("Model is not set")
         stmt = delete(self._model).where(self._model.id == model_id).returning(self._model)
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
         return result
     
     async def _set_order_by(self, stmt: Select, sort: DatabasePostgresSortType) -> Select:
+        if self._model is None:
+            raise ValueError("Model is not set")
         columns_and_orders = {
             column_orders.split(':')[0]: column_orders.split(':')[1]
             for column_orders in sort.split(',')
@@ -86,6 +96,8 @@ class DatabasePostgreSQLRepository:
         sort: DatabasePostgresSortType | None = None,
     ):
         """Paginate the models."""
+        if self._model is None:
+            raise ValueError("Model is not set")
         stmt = select(self._model)
         if sort:
             stmt = await self._set_order_by(stmt=stmt, sort=sort)
