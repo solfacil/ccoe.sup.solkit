@@ -63,21 +63,27 @@ class DatabasePostgreSQLAdapter:
             autocommit=False,
             future=True
         )
+    
+    async def _connection_healthcheck(self, engine: AsyncEngine, session_type: DatabasePostgresSessionType) -> bool:
+        """Test the engine connection with the connection pool and with the database host.
         
+        The engine.connect() validate if the pool is active.
+        The connection.execute() validate if the connection is active.
+        """
+        async with engine.connect() as connection:
+            result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
+            result = result.scalar()
+        logger.info(f"[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} ACTIVE: {result}]")
+        return result == 1
+    
     async def connect(self) -> None:
         """Connect to the database."""
         self._async_engine_rw = self._create_async_engine(self._settings.build_rw_uri())
-        
-        async with self._async_engine_rw.connect() as connection:
-            result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
-        logger.info(f"[ADAPTER][DATABASE][CONNECTION RW ACTIVE: {result.scalar()}]")
+        await self._connection_healthcheck(self._async_engine_rw, DatabasePostgresSessionType.READ_WRITE)
         
         if self._settings.cluster_mode:
             self._async_engine_ro = self._create_async_engine(self._settings.build_ro_uri())
-            
-            async with self._async_engine_ro.connect() as connection:
-                result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
-            logger.info(f"[ADAPTER][DATABASE][CONNECTION RO ACTIVE: {result.scalar()}]")
+            await self._connection_healthcheck(self._async_engine_ro, DatabasePostgresSessionType.READ_ONLY)
         
     def _get_engine(self, session_type: DatabasePostgresSessionType) -> AsyncEngine:
         return (
