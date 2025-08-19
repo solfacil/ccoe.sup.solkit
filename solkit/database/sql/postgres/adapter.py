@@ -43,7 +43,7 @@ class DatabasePostgreSQLAdapter:
             "pool_timeout": self._settings.pool_timeout_seconds,
             "pool_pre_ping": self._settings.pool_pre_ping,
             "pool_recycle": self._settings.pool_recycle_seconds,
-            "echo": self._settings.echo_sql,
+            "echo": self._settings.echo_sql.value,
         }
 
     def _create_async_engine(self, uri: URL) -> AsyncEngine:
