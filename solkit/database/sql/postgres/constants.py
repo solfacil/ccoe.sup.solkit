@@ -1,4 +1,3 @@
-import logging
 from enum import Enum, StrEnum
 
 # Pagination Default
@@ -11,9 +10,9 @@ DATABASE_DEFAULT_OFFSET = 0
 class DatabasePostgresEcho(Enum):
     """Database PostgreSQL echo."""
     
-    DEBUG = logging.DEBUG
-    ENABLED = logging.INFO
-    DISABLED = logging.WARNING
+    DEBUG = "debug"
+    ENABLED = True
+    DISABLED = False
 
 
 class DatabasePostgresSessionType(StrEnum):
