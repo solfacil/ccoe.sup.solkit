@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.types import DateTime, Integer
+from sqlalchemy.types import DateTime
 
 from ..constants import DATABASE_INDEXES_NAMING_CONVENTION
 
@@ -31,24 +31,15 @@ class BaseModel(DeclarativeBase):
             for k, v in self.__dict__.items() 
             if not k.startswith('_')
         }
+    
+    # def table_args(self, values: dict[str, Any]) -> None:
+    #     """Update the table arguments for the model."""
+    #     self.__table_args__.update(values)
 
 
 class EntityModel(BaseModel):
     """Entity base model."""
     __abstract__ = True
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), onupdate=datetime.now())
-
-
-# class EntityModelIntegerId(EntityModel):
-#    """Entity base model with integer id."""
-#    
-#    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-
-# class EntityModelStringId(EntityModel):
-#    """Entity base model with string id."""
-#    
-#    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
