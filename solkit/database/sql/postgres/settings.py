@@ -88,7 +88,7 @@ class DatabasePostgreSQLSettings(BaseSettings):
 
     def _build_url(self, host: str) -> URL:
         return URL.create(
-            drivername=f"{self.driver}+{self.dialect}",
+            drivername=f"{self.dialect}+{self.driver}",
             username=self.username,
             password=self.password,
             host=host,
