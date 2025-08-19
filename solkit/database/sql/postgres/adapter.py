@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.sql import text
 
-from ..constants import DATABASE_HEALTHCHECK_QUERY, DatabasePostgresSessionType
+from ..constants import DATABASE_HEALTHCHECK_QUERY, DatabaseSQLSession
 from .settings import DatabasePostgresSettings, create_database_postgres_settings
 
 logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ class DatabasePostgresAdapter:
             future=True
         )
     
-    async def _connection_healthcheck(self, engine: AsyncEngine, session_type: DatabasePostgresSessionType) -> bool:
+    async def _connection_healthcheck(self, engine: AsyncEngine, session_type: DatabaseSQLSession) -> bool:
         """Test the engine connection with the connection pool and with the database host.
         
         The engine.connect() validate if the pool is active.
@@ -88,23 +88,23 @@ class DatabasePostgresAdapter:
     async def connect(self) -> None:
         """Connect to the database."""
         self._async_engine_rw = self._create_async_engine(self._settings.build_rw_uri())
-        await self._connection_healthcheck(self._async_engine_rw, DatabasePostgresSessionType.READ_WRITE)
+        await self._connection_healthcheck(self._async_engine_rw, DatabaseSQLSession.READ_WRITE)
         
         if self._settings.cluster_mode:
             self._async_engine_ro = self._create_async_engine(self._settings.build_ro_uri())
-            await self._connection_healthcheck(self._async_engine_ro, DatabasePostgresSessionType.READ_ONLY)
+            await self._connection_healthcheck(self._async_engine_ro, DatabaseSQLSession.READ_ONLY)
         
-    def _get_engine(self, session_type: DatabasePostgresSessionType) -> AsyncEngine:
+    def _get_engine(self, session_type: DatabaseSQLSession) -> AsyncEngine:
         return (
             self._async_engine_rw 
-            if session_type == DatabasePostgresSessionType.READ_WRITE 
+            if session_type == DatabaseSQLSession.READ_WRITE 
             else self._async_engine_ro
         )
     
     @asynccontextmanager
     async def get_connection(
         self, 
-        session_type: DatabasePostgresSessionType = DatabasePostgresSessionType.READ_WRITE
+        session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
     ):
         """Get a connection from the database."""
         _engine = self._get_engine(session_type)
@@ -115,7 +115,7 @@ class DatabasePostgresAdapter:
     @asynccontextmanager
     async def get_session(
         self, 
-        session_type: DatabasePostgresSessionType = DatabasePostgresSessionType.READ_WRITE
+        session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
     ):
         """Get a session from the database."""
         _engine = self._get_engine(session_type)

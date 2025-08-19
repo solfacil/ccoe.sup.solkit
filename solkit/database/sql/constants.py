@@ -19,7 +19,7 @@ DATABASE_INDEXES_NAMING_CONVENTION = {
 }
 
 
-class DatabasePostgresEcho(Enum):
+class DatabaseSQLEcho(Enum):
     """Database PostgreSQL echo."""
     
     DEBUG = "debug"
@@ -27,15 +27,15 @@ class DatabasePostgresEcho(Enum):
     DISABLED = False
 
 
-class DatabasePostgresSessionType(StrEnum):
-    """Database PostgreSQL session type."""
+class DatabaseSQLSession(StrEnum):
+    """Database SQL session type."""
     
     READ_WRITE = "rw"
     READ_ONLY = "ro"
 
 
-class DatabasePostgresSortType(StrEnum):
-    """Database PostgreSQL sort type."""
+class DatabaseSQLSort(StrEnum):
+    """Database SQL sort type."""
     
     ASC = "asc"
     DESC = "desc"

@@ -4,7 +4,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 from sqlalchemy.engine import URL
 
-from ..constants import DatabasePostgresEcho
+from ..constants import DatabaseSQLEcho
 
 
 class DatabasePostgresSettings(BaseSettings):
@@ -75,13 +75,13 @@ class DatabasePostgresSettings(BaseSettings):
         description="Database pool pre ping",
         validation_alias="DATABASE_POOL_PRE_PING"
     )
-    echo_sql: DatabasePostgresEcho = Field(
-        default=DatabasePostgresEcho.DISABLED,
+    echo_sql: DatabaseSQLEcho = Field(
+        default=DatabaseSQLEcho.DISABLED,
         description="Database echo SQL",
         validation_alias="DATABASE_ECHO_SQL"
     )
-    echo_pool: DatabasePostgresEcho = Field(
-        default=DatabasePostgresEcho.DISABLED,
+    echo_pool: DatabaseSQLEcho = Field(
+        default=DatabaseSQLEcho.DISABLED,
         description="Database echo pool",
         validation_alias="DATABASE_ECHO_POOL"
     )
