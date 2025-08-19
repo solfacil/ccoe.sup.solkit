@@ -26,10 +26,11 @@ class DatabasePostgresAdapter:
     def config(cls, application_alias: str, host_alias: str = "self") -> "DatabasePostgresAdapter":
         """Config the database cluster."""
         settings = create_database_postgres_settings(host_alias)
-        return cls(settings())
+        return cls(application_alias, settings())
 
-    def __init__(self, settings: DatabasePostgresSettings) -> None:
+    def __init__(self, application: str, settings: DatabasePostgresSettings) -> None:
         """Initialize the database adapter."""
+        self._application = application
         self._settings = settings
         self._async_engine_rw: AsyncEngine
         self._async_engine_ro: AsyncEngine
@@ -46,11 +47,11 @@ class DatabasePostgresAdapter:
         }
     
     @property
-    def _connection_args(self) -> dict[str, Any]:
+    def _connection_args(self) -> dict[str, dict[str, str]]:
         return {
             "server_settings": {
-                # "application_name": self._settings.application_name,
-                "statement_timeout": self._settings.statement_timeout_seconds,
+                "application_name": self._application,
+                "statement_timeout": str(self._settings.statement_timeout_seconds),
             }
         }
 
