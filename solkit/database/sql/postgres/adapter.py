@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy.engine import URL
+from sqlalchemy.sql import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -14,7 +15,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from .abstracts import DatabasePostgreSQLAdapterAbstract
-from .constants import DatabasePostgresSessionType
+from .constants import DATABASE_HEALTHCHECK_QUERY, DatabasePostgresSessionType
 from .settings import DatabasePostgreSQLSettings, create_database_postgresql_settings
 
 logger = logging.getLogger(__name__)
@@ -66,9 +67,18 @@ class DatabasePostgreSQLAdapter:
     async def connect(self) -> None:
         """Connect to the database."""
         self._async_engine_rw = self._create_async_engine(self._settings.build_rw_uri())
+        
+        async with self._async_engine_rw.connect() as connection:
+            result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
+        logger.info(f"[ADAPTER][DATABASE][CONNECTION RW ACTIVE: {result.scalar()}]")
+        
         if self._settings.cluster_mode:
             self._async_engine_ro = self._create_async_engine(self._settings.build_ro_uri())
-    
+            
+            async with self._async_engine_ro.connect() as connection:
+                result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
+            logger.info(f"[ADAPTER][DATABASE][CONNECTION RO ACTIVE: {result.scalar()}]")
+        
     def _get_engine(self, session_type: DatabasePostgresSessionType) -> AsyncEngine:
         return (
             self._async_engine_rw 

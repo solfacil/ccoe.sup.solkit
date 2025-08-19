@@ -6,6 +6,8 @@ DATABASE_DEFAULT_SORT_TYPE = 'desc'
 DATABASE_DEFAULT_PAGE_SIZE = 100
 DATABASE_DEFAULT_OFFSET = 0
 
+DATABASE_HEALTHCHECK_QUERY = "SELECT 1"
+
 
 class DatabasePostgresEcho(Enum):
     """Database PostgreSQL echo."""
