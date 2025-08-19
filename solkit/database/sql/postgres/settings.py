@@ -4,10 +4,10 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 from sqlalchemy.engine import URL
 
-from .constants import DatabasePostgresEcho
+from ..constants import DatabasePostgresEcho
 
 
-class DatabasePostgreSQLSettings(BaseSettings):
+class DatabasePostgresSettings(BaseSettings):
     """Database PostgreSQL settings."""
         
     driver: str = Field(
@@ -80,6 +80,16 @@ class DatabasePostgreSQLSettings(BaseSettings):
         description="Database echo SQL",
         validation_alias="DATABASE_ECHO_SQL"
     )
+    echo_pool: DatabasePostgresEcho = Field(
+        default=DatabasePostgresEcho.DISABLED,
+        description="Database echo pool",
+        validation_alias="DATABASE_ECHO_POOL"
+    )
+    statement_timeout_seconds: int = Field(
+        default=30,
+        description="Database statement timeout seconds",
+        validation_alias="DATABASE_STATEMENT_TIMEOUT_SECONDS"
+    )
     
     @property
     def cluster_mode(self) -> bool:
@@ -116,10 +126,10 @@ class DatabasePostgreSQLSettings(BaseSettings):
         super().__init_subclass__(**kwargs)
 
 
-def create_database_postgresql_settings(host_alias: str | None) -> type[DatabasePostgreSQLSettings]:
+def create_database_postgres_settings(host_alias: str | None) -> type[DatabasePostgresSettings]:
     """Factory function to create database settings with custom prefix."""
     
-    class CustomDatabasePostgreSQLSettings(DatabasePostgreSQLSettings, host_alias=host_alias):
+    class CustomDatabasePostgresSettings(DatabasePostgresSettings, host_alias=host_alias):
         pass
     
-    return CustomDatabasePostgreSQLSettings
+    return CustomDatabasePostgresSettings

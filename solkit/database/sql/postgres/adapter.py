@@ -1,11 +1,9 @@
 import logging
 from asyncio import current_task
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy.engine import URL
-from sqlalchemy.sql import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -13,24 +11,24 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.sql import text
 
-from .abstracts import DatabasePostgreSQLAdapterAbstract
-from .constants import DATABASE_HEALTHCHECK_QUERY, DatabasePostgresSessionType
-from .settings import DatabasePostgreSQLSettings, create_database_postgresql_settings
+from ..constants import DATABASE_HEALTHCHECK_QUERY, DatabasePostgresSessionType
+from .settings import DatabasePostgresSettings, create_database_postgres_settings
 
 logger = logging.getLogger(__name__)
 
 
-class DatabasePostgreSQLAdapter:
+class DatabasePostgresAdapter:
     """Adapter for the database."""
     
     @classmethod
-    def config(cls, host_alias: str = "self") -> "DatabasePostgreSQLAdapter":
+    def config(cls, application_alias: str, host_alias: str = "self") -> "DatabasePostgresAdapter":
         """Config the database cluster."""
-        settings = create_database_postgresql_settings(host_alias)
+        settings = create_database_postgres_settings(host_alias)
         return cls(settings())
 
-    def __init__(self, settings: DatabasePostgreSQLSettings) -> None:
+    def __init__(self, settings: DatabasePostgresSettings) -> None:
         """Initialize the database adapter."""
         self._settings = settings
         self._async_engine_rw: AsyncEngine
@@ -46,12 +44,22 @@ class DatabasePostgreSQLAdapter:
             "pool_recycle": self._settings.pool_recycle_seconds,
             "echo": self._settings.echo_sql.value,
         }
+    
+    @property
+    def _connection_args(self) -> dict[str, Any]:
+        return {
+            "server_settings": {
+                # "application_name": self._settings.application_name,
+                "statement_timeout": self._settings.statement_timeout_seconds,
+            }
+        }
 
     def _create_async_engine(self, uri: URL) -> AsyncEngine:
         logger.info(f"[ADAPTER][DATABASE][ENGINE][URI: {uri.render_as_string(hide_password=True)}]")
         return create_async_engine(
             url=uri,
-            **self._async_engine_config
+            **self._async_engine_config,
+            connect_args=self._connection_args
         )
        
     def _async_session_facrory(self, async_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
@@ -126,4 +134,3 @@ class DatabasePostgreSQLAdapter:
         await self._async_engine_rw.dispose()
         if self._settings.cluster_mode:
             await self._async_engine_ro.dispose()
-        

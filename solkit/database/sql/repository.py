@@ -4,7 +4,6 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql import asc, desc, delete, insert, update
-from sqlalchemy.sql.schema import Sequence
 from sqlalchemy.sql.selectable import Select
 
 from .constants import (
@@ -12,12 +11,12 @@ from .constants import (
     DATABASE_DEFAULT_PAGE_SIZE, 
     DATABASE_DEFAULT_SORT_COLUMN, 
     DATABASE_DEFAULT_SORT_TYPE, 
-    DatabasePostgresSortType,
+    DatabasePostgresSortType
 )
-from .model import EntityModel
+from .orm.model import EntityModel
 
 
-class DatabasePostgreSQLRepository:
+class DatabaseSQLRepository:
     """Repository for the database."""
     
     def __init__(self, database_session: AsyncSession, model: type[EntityModel] | None) -> None:

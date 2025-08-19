@@ -9,6 +9,15 @@ DATABASE_DEFAULT_OFFSET = 0
 # Healthcheck Query
 DATABASE_HEALTHCHECK_QUERY = "SELECT 1"
 
+# Indexes Naming Convention
+DATABASE_INDEXES_NAMING_CONVENTION = {
+    'ix': '%(column_0_label)s_idx',
+    'uq': '%(table_name)s_%(column_0_name)s_key',
+    'ck': '%(table_name)s_%(constraint_name)s_check',
+    'fk': '%(table_name)s_%(column_0_name)s_fkey',
+    'pk': '%(table_name)s_pkey',
+}
+
 
 class DatabasePostgresEcho(Enum):
     """Database PostgreSQL echo."""

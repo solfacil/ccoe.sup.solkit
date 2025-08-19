@@ -4,10 +4,9 @@ from collections.abc import AsyncGenerator
 from sqlalchemy.engine.url import URL
 
 from .constants import DatabasePostgresSessionType
-from .settings import DatabasePostgresEcho
 
 
-class DatabasePostgreSQLSettingsAbstract(ABC):
+class DatabaseSQLSettingsAbstract(ABC):
     """Abstract class for the database settings."""
     
     @property
@@ -27,17 +26,17 @@ class DatabasePostgreSQLSettingsAbstract(ABC):
         raise NotImplementedError()
 
 
-class DatabasePostgreSQLAdapterAbstract(ABC):
+class DatabaseSQLAdapterAbstract(ABC):
     """Abstract class for the database adapter."""
     
     @classmethod
     @abstractmethod
-    def config(cls, host_alias: str = "self") -> "DatabasePostgreSQLAdapterAbstract":
+    def config(cls, host_alias: str = "self") -> "DatabaseSQLAdapterAbstract":
         """Config the database cluster."""
         raise NotImplementedError()
     
     @abstractmethod
-    def __init__(self, settings: DatabasePostgreSQLSettingsAbstract) -> None:
+    def __init__(self, settings: DatabaseSQLSettingsAbstract) -> None:
         """Initialize the database adapter."""
         raise NotImplementedError()
     

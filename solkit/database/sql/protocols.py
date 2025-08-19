@@ -2,10 +2,10 @@ from typing import Any, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .model import EntityModel
+from .orm.model import EntityModel
 
 
-class DatabasePostgreSQLRepositoryProtocol(Protocol):
+class DatabaseSQLRepositoryProtocol(Protocol):
     """Protocol for the database repository."""
     
     def __init__(self, database_session: AsyncSession, model: type[EntityModel]) -> None:
