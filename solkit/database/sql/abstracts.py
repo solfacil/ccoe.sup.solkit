@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.engine.url import URL
 
-from .constants import DatabasePostgresSessionType
+from .constants import DatabaseSQLSession
 
 
 class DatabaseSQLSettingsAbstract(ABC):
@@ -53,7 +53,7 @@ class DatabaseSQLAdapterAbstract(ABC):
     @abstractmethod
     async def get_connection(
         self, 
-        session_type: DatabasePostgresSessionType = DatabasePostgresSessionType.READ_WRITE
+        session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
     ) -> AsyncGenerator:
         """Get a connection from the database."""
         raise NotImplementedError()
@@ -61,7 +61,7 @@ class DatabaseSQLAdapterAbstract(ABC):
     @abstractmethod
     async def get_session(
         self, 
-        session_type: DatabasePostgresSessionType = DatabasePostgresSessionType.READ_WRITE
+        session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
     ) -> AsyncGenerator:
         """Get a session from the database."""
         raise NotImplementedError()

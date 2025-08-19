@@ -11,7 +11,7 @@ from .constants import (
     DATABASE_DEFAULT_PAGE_SIZE, 
     DATABASE_DEFAULT_SORT_COLUMN, 
     DATABASE_DEFAULT_SORT_TYPE, 
-    DatabasePostgresSortType
+    DatabaseSQLSort
 )
 from .orm.model import EntityModel
 
@@ -64,7 +64,7 @@ class DatabaseSQLRepository:
         result = result.one_or_none()
         return result
     
-    async def _set_order_by(self, stmt: Select, sort: DatabasePostgresSortType) -> Select:
+    async def _set_order_by(self, stmt: Select, sort: DatabaseSQLSort) -> Select:
         if self._model is None:
             raise ValueError("Model is not set")
         columns_and_orders = {
@@ -75,9 +75,9 @@ class DatabaseSQLRepository:
 
         for column, order in columns_and_orders.items():
             if column in  self._model.__table__.columns:
-                if order == str(DatabasePostgresSortType.DESC):
+                if order == str(DatabaseSQLSort.DESC):
                     stmt = stmt.order_by(desc(column))
-                elif order == str(DatabasePostgresSortType.ASC):
+                elif order == str(DatabaseSQLSort.ASC):
                     stmt = stmt.order_by(asc(column))
 
         return stmt
@@ -92,7 +92,7 @@ class DatabaseSQLRepository:
         self,
         limit: int = DATABASE_DEFAULT_PAGE_SIZE,
         offset: int = DATABASE_DEFAULT_OFFSET,
-        sort: DatabasePostgresSortType | None = None,
+        sort: DatabaseSQLSort | None = None,
     ):
         """Paginate the models."""
         if self._model is None:
