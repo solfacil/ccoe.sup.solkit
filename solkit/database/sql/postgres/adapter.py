@@ -34,6 +34,16 @@ class DatabasePostgresAdapter:
         self._settings = settings
         self._async_engine_rw: AsyncEngine
         self._async_engine_ro: AsyncEngine
+        
+    @property
+    def engine_rw(self) -> AsyncEngine:
+        """Get the engine."""
+        return self._async_engine_rw
+    
+    @property
+    def engine_ro(self) -> AsyncEngine:
+        """Get the engine."""
+        return self._async_engine_ro
     
     @property
     def _async_engine_config(self) -> dict[str, Any]:
