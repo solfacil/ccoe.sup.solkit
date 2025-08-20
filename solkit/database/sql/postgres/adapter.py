@@ -38,11 +38,15 @@ class DatabasePostgresAdapter:
     @property
     def engine_rw(self) -> AsyncEngine:
         """Get the engine."""
+        if not self._async_engine_rw:
+            raise RuntimeError("RW Engine not initialized")
         return self._async_engine_rw
     
     @property
     def engine_ro(self) -> AsyncEngine:
         """Get the engine."""
+        if not self._async_engine_ro:
+            raise RuntimeError("RO Engine not initialized")
         return self._async_engine_ro
     
     @property
