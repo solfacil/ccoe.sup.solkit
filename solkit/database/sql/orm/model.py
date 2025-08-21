@@ -27,12 +27,11 @@ class BaseModel(DeclarativeBase):
     def to_dict(self) -> dict[str, Any]:
         """Return the dictionary representation of the model."""
         return {
-            k: v 
-            for k, v in self.__dict__.items() 
-            if not k.startswith('_')
+            column.key: getattr(self, column.key) 
+            for column in self.__mapper__.columns
         }
     
-    # def table_args(self, values: dict[str, Any]) -> None:
+    # def set_table_args(self, values: dict[str, Any]) -> None:
     #     """Update the table arguments for the model."""
     #     self.__table_args__.update(values)
 
