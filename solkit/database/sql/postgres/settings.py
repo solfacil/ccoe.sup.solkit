@@ -1,10 +1,10 @@
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 from sqlalchemy.engine import URL
 
-from ..constants import DatabaseSQLEcho
+from ..constants import DATABASE_SETTINGS_PREFIX, DatabaseSQLEcho
 
 
 class DatabasePostgresSettings(BaseSettings):
@@ -13,77 +13,77 @@ class DatabasePostgresSettings(BaseSettings):
     driver: str = Field(
         default="asyncpg",
         description="Database driver",
-        validation_alias="DATABASE_DRIVER"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_DRIVER"
     )
     dialect: str = Field(
         default="postgresql",
         description="Database dialect",
-        validation_alias="DATABASE_DIALECT"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_DIALECT"
     )
     username: str = Field(
         default=...,
         description="Database username",
-        validation_alias="DATABASE_USERNAME"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_USERNAME"
     )
     password: str = Field(
         default=...,
         description="Database password",
-        validation_alias="DATABASE_PASSWORD"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_PASSWORD"
     )
     host_rw: str = Field(
         default=...,
         description="Database host read/write",
-        validation_alias="DATABASE_HOST_RW"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_HOST_RW"
     )
     host_ro: str | None = Field(
         default=None,
         description="Database host read only",
-        validation_alias="DATABASE_HOST_RO"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_HOST_RO"
     )
     port: int = Field(
         default=5432,
         description="Database port",
-        validation_alias="DATABASE_PORT"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_PORT"
     )
-    database: str = Field(
+    name: str = Field(
         default="postgres",
         description="Database name",
-        validation_alias="DATABASE_NAME"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_NAME"
     )
     pool_size: int = Field(
         default=10,
         description="Database pool size",
-        validation_alias="DATABASE_POOL_SIZE"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_POOL_SIZE"
     )
     max_overflow: int = Field(
         default=20,
         description="Database max overflow",
-        validation_alias="DATABASE_MAX_OVERFLOW"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_MAX_OVERFLOW"
     )
     pool_recycle_seconds: int = Field(
         default=300,
         description="Database pool recycle seconds",
-        validation_alias="DATABASE_POOL_RECYCLE_SECONDS"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_POOL_RECYCLE_SECONDS"
     )
     pool_timeout_seconds: int = Field(
         default=30,
         description="Database pool timeout seconds",
-        validation_alias="DATABASE_POOL_TIMEOUT_SECONDS"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_POOL_TIMEOUT_SECONDS"
     )
     pool_pre_ping: bool = Field(
         default=True,
         description="Database pool pre ping",
-        validation_alias="DATABASE_POOL_PRE_PING"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_POOL_PRE_PING"
     )
-    echo_sql: DatabaseSQLEcho = Field(
+    echo_sql: str | DatabaseSQLEcho = Field(
         default=DatabaseSQLEcho.DISABLED,
         description="Database echo SQL",
-        validation_alias="DATABASE_ECHO_SQL"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_ECHO_SQL"
     )
-    echo_pool: DatabaseSQLEcho = Field(
+    echo_pool: str | DatabaseSQLEcho = Field(
         default=DatabaseSQLEcho.DISABLED,
         description="Database echo pool",
-        validation_alias="DATABASE_ECHO_POOL"
+        validation_alias=f"{DATABASE_SETTINGS_PREFIX}_ECHO_POOL"
     )
     statement_timeout_seconds: int = Field(
         default=30,
@@ -103,7 +103,7 @@ class DatabasePostgresSettings(BaseSettings):
             password=self.password,
             host=host,
             port=self.port,
-            database=self.database,
+            database=self.name,
         )
                 
     def build_rw_uri(self) -> URL:
@@ -119,12 +119,30 @@ class DatabasePostgresSettings(BaseSettings):
     def __init_subclass__(cls, host_alias: str | None, **kwargs: Any) -> None:
         """Initialize subclass with custom validation prefix."""
         if host_alias is not None:
+            prefix = f"{DATABASE_SETTINGS_PREFIX}_{host_alias.upper()}"
+            
             for field_name, field_info in cls.model_fields.items():
                 if hasattr(field_info, 'validation_alias'):
-                    field_info.validation_alias = f"DATABASE_{host_alias.upper()}_{field_name.upper()}"
+                    field_info.validation_alias = f"{prefix}_{field_name.upper()}"
         
         super().__init_subclass__(**kwargs)
-
+    
+    @field_validator("echo_sql", "echo_pool", mode="before")
+    @classmethod
+    def validate_echo(cls, value: str | DatabaseSQLEcho) -> DatabaseSQLEcho:
+        """Validate echo."""
+        if isinstance(value, DatabaseSQLEcho):
+            return value
+        value = value.lower()
+        values = {
+            "true": DatabaseSQLEcho.ENABLED,
+            "false": DatabaseSQLEcho.DISABLED,
+            "debug": DatabaseSQLEcho.DEBUG,
+        }
+        if value not in values:
+            raise ValueError("Invalid echo")
+        return values[value]
+    
 
 def create_database_postgres_settings(host_alias: str | None) -> type[DatabasePostgresSettings]:
     """Factory function to create database settings with custom prefix."""
