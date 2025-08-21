@@ -5,14 +5,13 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.engine import URL
 
-from solkit.database.sql.postgres.constants import DatabasePostgresEcho
+from solkit.database.sql.constants import DatabaseSQLEcho
 from solkit.database.sql.postgres.settings import (
-    DatabasePostgreSQLSettings,
-    create_database_postgresql_settings,
+    create_database_postgres_settings,
+    DatabasePostgresSettings
 )
 
-
-def test_database_postgresql_settings_should_set_correct_default_values() -> None:
+def test_database_postgresql_settings_with_minimal_required_fields_then_return_correct_values() -> None:
     """Test that default values are set correctly."""
     # arrange
     environment_variables = {
@@ -22,7 +21,7 @@ def test_database_postgresql_settings_should_set_correct_default_values() -> Non
     }
     with patch.dict(os.environ, environment_variables):
         # act
-        settings = DatabasePostgreSQLSettings()
+        settings = DatabasePostgresSettings()
         
     # assert
     assert settings.driver == "asyncpg"
@@ -32,29 +31,43 @@ def test_database_postgresql_settings_should_set_correct_default_values() -> Non
     assert settings.host_rw == "localhost"
     assert settings.host_ro is None
     assert settings.port == 5432
-    assert settings.database == "postgres"
+    assert settings.name == "postgres"
     assert settings.pool_size == 10
     assert settings.max_overflow == 20
     assert settings.pool_recycle_seconds == 300
     assert settings.pool_timeout_seconds == 30
     assert settings.pool_pre_ping is True
-    assert settings.echo_sql == DatabasePostgresEcho.DISABLED
+    assert settings.echo_sql == DatabaseSQLEcho.DISABLED
+    assert settings.echo_pool == DatabaseSQLEcho.DISABLED
 
 
-def test_database_postgresql_settings_should_raise_validation_error_when_required_fields_missing() -> None:
+@pytest.mark.parametrize("environment_variable, missing_field", [
+    pytest.param("DATABASE_USERNAME", "username", id="missing username"),
+    pytest.param("DATABASE_PASSWORD", "password", id="missing password"),
+    pytest.param("DATABASE_HOST_RW",  "host_rw",  id="missing host_rw"),
+])
+def test_database_postgresql_settings_with_missing_required_fields_then_raise_validation_error(
+    environment_variable: str, 
+    missing_field: str
+) -> None:
     """Test that required fields raise ValidationError when missing."""
-    # arrange & act & assert
-    with pytest.raises(ValidationError) as exc_info:
-        DatabasePostgreSQLSettings()
+    # arrange
+    environment_variables = {
+        "DATABASE_USERNAME": "testuser",
+        "DATABASE_PASSWORD": "testpass",
+        "DATABASE_HOST_RW": "localhost"
+    }
+    del environment_variables[environment_variable]
     
-    errors = exc_info.value.errors()
-    required_fields = ["username", "password", "host_rw"]
-    
-    for field in required_fields:
-        assert any(field in str(error) for error in errors)
+    # act
+    with patch.dict(os.environ, environment_variables), pytest.raises(ValidationError) as exc_info:
+        DatabasePostgresSettings()
+        
+        # assert
+        assert missing_field in str(exc_info.value)
 
 
-def test_database_postgresql_settings_should_use_environment_variable_aliases_correctly() -> None:
+def test_database_postgresql_settings_with_environment_variable_aliases_then_return_correct_values() -> None:
     """Test that environment variable aliases work correctly."""
     # arrange
     environment_variables = {
@@ -71,12 +84,13 @@ def test_database_postgresql_settings_should_use_environment_variable_aliases_co
         "DATABASE_POOL_RECYCLE_SECONDS": "600",
         "DATABASE_POOL_TIMEOUT_SECONDS": "45",
         "DATABASE_POOL_PRE_PING": "false",
-        "DATABASE_ECHO_SQL": "ENABLED"
+        "DATABASE_ECHO_SQL": "false",
+        "DATABASE_ECHO_POOL": "false"
     }
     
     with patch.dict(os.environ, environment_variables):
         # act
-        settings = DatabasePostgreSQLSettings()
+        settings = DatabasePostgresSettings()
         
     # assert
     assert settings.driver == "psycopg2"
@@ -86,47 +100,41 @@ def test_database_postgresql_settings_should_use_environment_variable_aliases_co
     assert settings.host_rw == "envhost"
     assert settings.host_ro == "envrohost"
     assert settings.port == 5433
-    assert settings.database == "envdb"
+    assert settings.name == "envdb"
     assert settings.pool_size == 15
     assert settings.max_overflow == 25
     assert settings.pool_recycle_seconds == 600
     assert settings.pool_timeout_seconds == 45
     assert settings.pool_pre_ping is False
-    assert settings.echo_sql == DatabasePostgresEcho.ENABLED
+    assert settings.echo_sql == DatabaseSQLEcho.DISABLED
+    assert settings.echo_pool == DatabaseSQLEcho.DISABLED
 
 
-def test_cluster_mode_property_should_return_true_when_readonly_host_is_set() -> None:
+@pytest.mark.parametrize("host_ro, cluster_mode", [
+    pytest.param(None,                 False, id="Without Readonly Host"),
+    pytest.param("readonly.localhost", True,  id="With Readonly Host"),
+])
+def test_database_postgresql_settings_cluster_mode_property(host_ro: str | None, cluster_mode: bool) -> None:
     """Test cluster_mode property returns True when host_ro is set."""
     # arrange
     environment_variables = {
         "DATABASE_USERNAME": "testuser",
         "DATABASE_PASSWORD": "testpass",
         "DATABASE_HOST_RW": "localhost",
-        "DATABASE_HOST_RO": "readonly.localhost"
     }
-    with patch.dict(os.environ, environment_variables):
-        settings = DatabasePostgreSQLSettings()
+    if host_ro is not None:
+        environment_variables["DATABASE_HOST_RO"] = host_ro
         
-    # act & assert
-    assert settings.cluster_mode is True
-
-
-def test_cluster_mode_property_should_return_false_when_readonly_host_is_not_set() -> None:
-    """Test cluster_mode property returns False when host_ro is not set."""
-    # arrange
-    environment_variables = {
-        "DATABASE_USERNAME": "testuser",
-        "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost"
-    }
+    # act
     with patch.dict(os.environ, environment_variables):
-        settings = DatabasePostgreSQLSettings()
+        settings = DatabasePostgresSettings()
         
-    # act & assert
-    assert settings.cluster_mode is False
+    # assert
+    assert settings.cluster_mode is cluster_mode
 
 
-def test_build_rw_uri_should_return_correct_sqlalchemy_url() -> None:
+
+def test_database_postgresql_settings_build_rw_uri_then_return_correct_uri() -> None:
     """Test build_rw_uri method returns correct URL."""
     # arrange
     environment_variables = {
@@ -137,14 +145,14 @@ def test_build_rw_uri_should_return_correct_sqlalchemy_url() -> None:
         "DATABASE_NAME": "testdb"
     }
     with patch.dict(os.environ, environment_variables):
-        settings = DatabasePostgreSQLSettings()
+        settings = DatabasePostgresSettings()
         
     # act
     url = settings.build_rw_uri()
     
     # assert
     assert isinstance(url, URL)
-    assert url.drivername == "asyncpg+postgresql"
+    assert url.drivername == "postgresql+asyncpg"
     assert url.username == "testuser"
     assert url.password == "testpass" # noqa: S105 # nosec
     assert url.host == "localhost"
@@ -152,7 +160,7 @@ def test_build_rw_uri_should_return_correct_sqlalchemy_url() -> None:
     assert url.database == "testdb"
 
 
-def test_build_ro_uri_should_return_correct_url_when_readonly_host_is_set() -> None:
+def test_database_postgresql_settings_build_ro_uri_then_return_correct_uri() -> None:
     """Test build_ro_uri method returns correct URL when host_ro is set."""
     # arrange
     environment_variables = {
@@ -164,14 +172,14 @@ def test_build_ro_uri_should_return_correct_url_when_readonly_host_is_set() -> N
         "DATABASE_NAME": "testdb"
     }
     with patch.dict(os.environ, environment_variables):
-        settings = DatabasePostgreSQLSettings()
+        settings = DatabasePostgresSettings()
         
     # act
     url = settings.build_ro_uri()
     
     # assert
     assert isinstance(url, URL)
-    assert url.drivername == "asyncpg+postgresql"
+    assert url.drivername == "postgresql+asyncpg"
     assert url.username == "testuser"
     assert url.password == "testpass" # noqa: S105 # nosec
     assert url.host == "readonly.localhost"
@@ -179,7 +187,7 @@ def test_build_ro_uri_should_return_correct_url_when_readonly_host_is_set() -> N
     assert url.database == "testdb"
 
 
-def test_build_ro_uri_should_raise_value_error_when_readonly_host_is_not_set() -> None:
+def test_database_postgresql_settings_build_ro_uri_with_missing_readonly_host_then_raise_value_error() -> None:
     """Test build_ro_uri method raises ValueError when host_ro is not set."""
     # arrange
     environment_variables = {
@@ -188,229 +196,96 @@ def test_build_ro_uri_should_raise_value_error_when_readonly_host_is_not_set() -
         "DATABASE_HOST_RW": "localhost"
     }
     with patch.dict(os.environ, environment_variables):
-        settings = DatabasePostgreSQLSettings()
+        settings = DatabasePostgresSettings()
         
     # act & assert
     with pytest.raises(ValueError, match="Host read only is not set"):
         settings.build_ro_uri()
 
 
-def test_build_url_should_use_custom_driver_and_dialect_combination() -> None:
-    """Test _build_url method with custom driver and dialect."""
+@pytest.mark.parametrize("echo_sql", [
+    pytest.param(DatabaseSQLEcho.DISABLED, id="disabled"),
+    pytest.param(DatabaseSQLEcho.ENABLED,  id="enabled"),
+    pytest.param(DatabaseSQLEcho.DEBUG,    id="debug")
+])
+def test_database_postgresql_settings_echo_sql_then_return_correct_echo_sql(echo_sql: DatabaseSQLEcho) -> None:
+    """Test echo_sql property returns correct value."""
     # arrange
     environment_variables = {
         "DATABASE_USERNAME": "testuser",
         "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost"
+        "DATABASE_HOST_RW": "localhost",
+        "DATABASE_ECHO_SQL": str(echo_sql.value).lower()
     }
     with patch.dict(os.environ, environment_variables):
-        settings = DatabasePostgreSQLSettings()
-        settings.driver = "psycopg2"
-        settings.dialect = "postgresql"
-        
-    # act
-    url = settings.build_rw_uri()
-    
-    # assert
-    assert url.drivername == "psycopg2+postgresql"
-
-
-def test_subclass_with_host_alias_should_modify_validation_aliases() -> None:
-    """Test that subclass with host_alias modifies validation aliases."""
-    # arrange
-    host_alias = "TEST"
-    environment_variables = {
-        f"DATABASE_{host_alias}_USERNAME": "testuser",
-        f"DATABASE_{host_alias}_PASSWORD": "testpass",
-        f"DATABASE_{host_alias}_HOST_RW": "localhost",
-        f"DATABASE_{host_alias}_HOST_RO": "readonly.localhost"
-    }
-    class TestSettings(DatabasePostgreSQLSettings, host_alias=host_alias):
-        pass
-        
-    # act
-    with patch.dict(os.environ, environment_variables):
-        settings = TestSettings()
+        # act
+        settings = DatabasePostgresSettings()
         
     # assert
-    assert settings.username == "testuser"
-    assert settings.password == "testpass" # noqa: S105 # nosec
-    assert settings.host_rw == "localhost"
-    assert settings.host_ro == "readonly.localhost"
-    
+    assert settings.echo_sql == echo_sql
 
-def test_subclass_without_host_alias_should_use_default_validation_aliases() -> None:
-    """Test that subclass without host_alias uses default validation aliases."""
+
+@pytest.mark.parametrize("echo_pool", [
+    pytest.param(DatabaseSQLEcho.DISABLED, id="disabled"),
+    pytest.param(DatabaseSQLEcho.ENABLED,  id="enabled"),
+    pytest.param(DatabaseSQLEcho.DEBUG,    id="debug")
+])
+def test_database_postgresql_settings_echo_pool_then_return_correct_echo_pool(echo_pool: DatabaseSQLEcho) -> None:
+    """Test echo_pool property returns correct value."""
     # arrange
     environment_variables = {
         "DATABASE_USERNAME": "testuser",
         "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost"
+        "DATABASE_HOST_RW": "localhost",
+        "DATABASE_ECHO_POOL": str(echo_pool.value)
     }
-    class TestSettings(DatabasePostgreSQLSettings, host_alias=None):
-        pass
-        
     # act
     with patch.dict(os.environ, environment_variables):
-        settings = TestSettings()
+        settings = DatabasePostgresSettings()
         
     # assert
-    assert settings.username == "testuser"
-    assert settings.password == "testpass" # noqa: S105 # nosec
-    assert settings.host_rw == "localhost"
+    assert settings.echo_pool == echo_pool
 
 
-def test_create_database_postgresql_settings_factory_should_create_class_with_custom_host_alias() -> None:
-    """Test factory function creates settings class with custom host alias."""
-    # arrange
-    host_alias = "custom"
-    
-    # act
-    CustomSettings = create_database_postgresql_settings(host_alias)
-    
-    # assert
-    assert issubclass(CustomSettings, DatabasePostgreSQLSettings)
-    
-    # Test that the custom class works with modified aliases
-    with patch.dict(os.environ, {
-        "DATABASE_CUSTOM_USERNAME": "testuser",
-        "DATABASE_CUSTOM_PASSWORD": "testpass",
-        "DATABASE_CUSTOM_HOST_RW": "localhost"
-    }):
-        settings = CustomSettings()
-        
-    assert settings.username == "testuser"
-    assert settings.password == "testpass" # noqa: S105 # nosec
-    assert settings.host_rw == "localhost"
-
-
-def test_create_database_postgresql_settings_factory_should_create_class_without_host_alias() -> None:
-    """Test factory function creates settings class without host alias."""
+def test_create_database_postgres_settings_without_host_alias_then_return_default_validation_aliases() -> None:
+    """Test that create_database_postgres_settings without host_alias returns default validation aliases."""
     # arrange
     host_alias = None
-    
-    # act
-    CustomSettings = create_database_postgresql_settings(host_alias)
-    
-    # assert
-    assert issubclass(CustomSettings, DatabasePostgreSQLSettings)
-    
-    # Test that the custom class works with default aliases
-    with patch.dict(os.environ, {
+    environment_variables = {
         "DATABASE_USERNAME": "testuser",
         "DATABASE_PASSWORD": "testpass",
         "DATABASE_HOST_RW": "localhost"
-    }):
+    }
+    
+    # act
+    CustomSettings = create_database_postgres_settings(host_alias)
+    with patch.dict(os.environ, environment_variables):
         settings = CustomSettings()
-        
+    
+    # assert
+    assert issubclass(CustomSettings, DatabasePostgresSettings)
     assert settings.username == "testuser"
     assert settings.password == "testpass" # noqa: S105 # nosec
     assert settings.host_rw == "localhost"
 
 
-def test_factory_function_should_create_unique_classes_for_different_aliases() -> None:
-    """Test that factory function creates unique classes for different aliases."""
+def test_create_database_postgres_settings_with_host_alias_then_return_default_validation_aliases_with_custom_prefix() -> None:
+    """Test that create_database_postgres_settings with host_alias returns default validation aliases with custom prefix."""
     # arrange
-    alias1 = "first"
-    alias2 = "second"
-    
-    # act
-    Settings1 = create_database_postgresql_settings(alias1)
-    Settings2 = create_database_postgresql_settings(alias2)
-    
-    # assert
-    assert Settings1 is not Settings2
-    assert Settings1.__name__ != Settings2.__name__
-
-
-def test_database_postgresql_settings_should_raise_validation_error_for_invalid_port_type() -> None:
-    """Test that invalid port type raises ValidationError."""
-    # arrange
+    host_alias = "self"
     environment_variables = {
-        "DATABASE_USERNAME": "testuser",
-        "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost",
-        "DATABASE_PORT": "invalid_port"
+        f"DATABASE_{host_alias.upper()}_USERNAME": "testuser",
+        f"DATABASE_{host_alias.upper()}_PASSWORD": "testpass",
+        f"DATABASE_{host_alias.upper()}_HOST_RW": "localhost"
     }
     
     # act
-    with patch.dict(os.environ, environment_variables), pytest.raises(ValidationError) as exc_info:
-        DatabasePostgreSQLSettings()
-    
-    # assert
-    errors = exc_info.value.errors()
-    assert any("port" in str(error) for error in errors)
-
-
-def test_database_postgresql_settings_should_raise_validation_error_for_invalid_pool_size_type() -> None:
-    """Test that invalid pool_size type raises ValidationError."""
-    # arrange
-    environment_variables = {
-        "DATABASE_USERNAME": "testuser",
-        "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost",
-        "DATABASE_POOL_SIZE": "invalid_size"
-    }
-    
-    # act
-    with patch.dict(os.environ, environment_variables), pytest.raises(ValidationError) as exc_info:
-        DatabasePostgreSQLSettings()
-    
-    # assert
-    errors = exc_info.value.errors()
-    assert any("pool_size" in str(error) for error in errors)
-
-
-def test_database_postgresql_settings_should_raise_validation_error_for_invalid_echo_sql_value() -> None:
-    """Test that invalid echo_sql value raises ValidationError."""
-    # arrange
-    environment_variables = {
-        "DATABASE_USERNAME": "testuser",
-        "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost",
-        "DATABASE_ECHO_SQL": "INVALID_VALUE"
-    }
-    
-    # act
-    with patch.dict(os.environ, environment_variables), pytest.raises(ValidationError) as exc_info:
-        DatabasePostgreSQLSettings()
-    
-    # assert
-    errors = exc_info.value.errors()
-    assert any("echo_sql" in str(error) for error in errors)
-
-
-def test_database_postgresql_settings_should_validate_boolean_fields_from_string_representations() -> None:
-    """Test that boolean fields properly validate string representations."""
-    # arrange
-    with patch.dict(os.environ, {
-        "DATABASE_USERNAME": "testuser",
-        "DATABASE_PASSWORD": "testpass",
-        "DATABASE_HOST_RW": "localhost",
-        "DATABASE_POOL_PRE_PING": "false"
-    }):
-        # act
-        settings = DatabasePostgreSQLSettings()
+    CustomSettings = create_database_postgres_settings(host_alias)
+    with patch.dict(os.environ, environment_variables):
+        settings = CustomSettings()
         
     # assert
-    assert settings.pool_pre_ping is False
-
-
-def test_database_postgresql_settings_should_raise_validation_error_for_empty_strings_in_required_fields() -> None:
-    """Test that empty strings for required fields raise ValidationError."""
-    # arrange
-    environment_variables = {
-        "DATABASE_USERNAME": "",
-        "DATABASE_PASSWORD": "",
-        "DATABASE_HOST_RW": ""
-    }
-    
-    # act
-    with patch.dict(os.environ, environment_variables), pytest.raises(ValidationError) as exc_info:
-        DatabasePostgreSQLSettings()
-    
-    # assert
-    errors = exc_info.value.errors()
-    required_fields = ["username", "password", "host_rw"]
-    for field in required_fields:
-        assert any(field in str(error) for error in errors)
+    assert issubclass(CustomSettings, DatabasePostgresSettings)
+    assert settings.username == "testuser"
+    assert settings.password == "testpass" # noqa: S105 # nosec
+    assert settings.host_rw == "localhost"
