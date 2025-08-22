@@ -14,7 +14,7 @@ from solkit.common.trace_correlation_id import (
 )
 
 from .adapter import BrokerKafkaAdapter
-from .constants import BROKER_DEAD_LETTER_QUEUE_SUFFIX, BROKER_RETRY_SUFFIX
+from .constants import BROKER_DEAD_LETTER_QUEUE_SUFFIX, BROKER_RETRY_SUFFIX, LOG_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -106,21 +106,26 @@ class BrokerRepository:
             value=self._parse_message_value(value, producer_metadata), 
             headers=self._set_correlation_id(),
         )
-        logger.info(f"[BROKER][REPOSITORY][PRODUCE - TOPIC: {topic} - KEY: {key}]")
+        logger.info(f"{LOG_PREFIX}[PRODUCE][TOPIC: {topic} - KEY: {key}]")
 
     async def consume(self, func: Callable[[ConsumerRecord], Awaitable[None]], wait_time: int = 3) -> None:
         """Consume messages from a Kafka topic."""
         async for message in self._adapter.consumer:
             self._get_correlation_id(message)
             try:
-                logger.info(f"[BROKER][REPOSITORY][CONSUME - TOPIC: {message.topic} - KEY: {message.key}]")
+                logger.info(f"{LOG_PREFIX}[CONSUME][TOPIC: {message.topic} - KEY: {message.key}]")
                 await func(message)
             # except DLQMessageException as err:
             except Exception as err:
-                logger.error(f"[BROKER][REPOSITORY][CONSUME - ERROR: {err}]")
+                logger.error(f"{LOG_PREFIX}[CONSUME][ERROR: {err}]")
                 
-                if next_retry_topic := self._next_retry_topic(message.topic, self._adapter._consumer_settings.retry_max_times):  # type: ignore
-                    logger.info(f"[BROKER][REPOSITORY][RETRY - TOPIC: {next_retry_topic} - KEY: {message.key} - WAIT: {wait_time}]")
+                if next_retry_topic := self._next_retry_topic(
+                        message.topic, 
+                    self._adapter._consumer_settings.retry_max_times,  # type: ignore
+                ):
+                    logger.info(
+                        f"{LOG_PREFIX}[RETRY][TOPIC: {next_retry_topic} - KEY: {message.key} - WAIT: {wait_time}]"
+                    )
                     await asyncio.sleep(wait_time)
                     value, metadata = self._unparse_message_value(message.value)  # type: ignore
                     metadata.update({"error": repr(err)})
@@ -132,7 +137,7 @@ class BrokerRepository:
                     )
             finally:
                 await self._adapter.consumer.commit()
-                logger.info(f"[BROKER][REPOSITORY][COMMIT - TOPIC: {message.topic} - KEY: {message.key}]")
+                logger.info(f"{LOG_PREFIX}[COMMIT][TOPIC: {message.topic} - KEY: {message.key}]")
 
     # async def healthcheck(self) -> None:
     #     producer = await self._adapter._producer.send_and_wait("healthcheck", "healthcheck")
