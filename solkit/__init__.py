@@ -35,3 +35,11 @@ if importlib.util.find_spec("redis") is not None:
 else:
     cache = create_placeholder_module("cache")
     sys.modules[__name__ + '.cache'] = cache
+
+# Conditionally import database.sql module
+if importlib.util.find_spec("sqlalchemy") is not None:
+    from . import database
+    __all__.append("database")
+else:
+    database = create_placeholder_module("database")
+    sys.modules[__name__ + '.database'] = create_placeholder_module("database.sql")

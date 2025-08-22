@@ -49,6 +49,11 @@ cache = [
 broker = [
     "aiokafka>=0.11.0"
 ]
+postgres = [
+    "SQLAlchemy[asyncio]==2.0.43",
+    "psycopg2-binary==2.9.10",
+    "asyncpg==0.30.0"
+]
 all = [
-    "solkit[cache,broker]"
+    "solkit[cache,broker,postgres]"
 ]
