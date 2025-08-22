@@ -122,7 +122,7 @@ class DatabasePostgresSettings(BaseSettings):
             raise ValueError("Host read only is not set")
         return self._build_url(self.host_ro)
     
-    def __init_subclass__(cls, host_alias: str | None, **kwargs: Any) -> None:
+    def __init_subclass__(cls, host_alias: str | None, **kwargs: Any) -> None: # type: ignore
         """Initialize subclass with custom validation prefix."""
         if host_alias is not None:
             prefix = f"{DATABASE_SETTINGS_PREFIX}_{host_alias.upper()}"
