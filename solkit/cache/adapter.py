@@ -9,7 +9,7 @@ from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 
 from .constants import CacheDeploymentMode
-from .settings import CacheRedisClusterSettings, CacheRedisModeSettings, CacheRedisSingleNodeSettings
+from .settings import CacheRedisClusterSettings, CacheModeSettings, CacheRedisSingleNodeSettings
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class CacheRedisAdapter:
     @classmethod
     def config(cls) -> "CacheRedisAdapter":
         """Create a cache adapter based on the deployment mode."""
-        cache_mode_settings = CacheRedisModeSettings()
+        cache_mode_settings = CacheModeSettings()
         return (
             cls.cluster_config()
             if cache_mode_settings.deployment_mode == CacheDeploymentMode.CLUSTER 
