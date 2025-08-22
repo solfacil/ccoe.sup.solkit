@@ -1,6 +1,8 @@
+"""Cache module."""
+
 from .adapter import CacheRedisAdapter
-from .repository import CacheRepository
 from .protocol import CacheRepositoryProtocol
+from .repository import CacheRepository
 
 __all__ = [
     "CacheRedisAdapter", 
