@@ -71,11 +71,12 @@ class DatabasePostgresAdapter:
         }
     
     @property
-    def _connection_args(self) -> dict[str, dict[str, str]]:
+    def _connection_args(self) -> dict[str, dict[str, str | int]]:
         return {
             "server_settings": {
                 "application_name": self._application,
-                "statement_timeout": str(self._settings.statement_timeout_seconds),
+                "timeout": self._settings.connection_timeout_seconds,
+                # "statement_timeout": str(self._settings.statement_timeout_seconds),
             }
         }
 

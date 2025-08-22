@@ -39,6 +39,7 @@ def test_database_postgresql_settings_with_minimal_required_fields_then_return_c
     assert settings.pool_pre_ping is True
     assert settings.echo_sql == DatabaseSQLEcho.DISABLED
     assert settings.echo_pool == DatabaseSQLEcho.DISABLED
+    assert settings.connection_timeout_seconds == 10
 
 
 @pytest.mark.parametrize("environment_variable, missing_field", [
@@ -85,7 +86,8 @@ def test_database_postgresql_settings_with_environment_variable_aliases_then_ret
         "DATABASE_POOL_TIMEOUT_SECONDS": "45",
         "DATABASE_POOL_PRE_PING": "false",
         "DATABASE_ECHO_SQL": "false",
-        "DATABASE_ECHO_POOL": "false"
+        "DATABASE_ECHO_POOL": "false",
+        "DATABASE_CONNECTION_TIMEOUT_SECONDS": "15"
     }
     
     with patch.dict(os.environ, environment_variables):
@@ -108,7 +110,7 @@ def test_database_postgresql_settings_with_environment_variable_aliases_then_ret
     assert settings.pool_pre_ping is False
     assert settings.echo_sql == DatabaseSQLEcho.DISABLED
     assert settings.echo_pool == DatabaseSQLEcho.DISABLED
-
+    assert settings.connection_timeout_seconds == 15
 
 @pytest.mark.parametrize("host_ro, cluster_mode", [
     pytest.param(None,                 False, id="Without Readonly Host"),
