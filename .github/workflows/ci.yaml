@@ -3,9 +3,10 @@ name: Python Continuous Integration
 
 on:
   push:
+  pull_request:
     branches:
       - main
-    
+
 env:
   PYTHON_VERSION: 3.12
   DEPENDENCIES_FILE: requirements/development.txt
@@ -21,20 +22,31 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: 'Install dependencies - ${{ env.DEPENDENCIES_FILE }}'
+      
+      - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip wheel setuptools
+
+      - name: 'Install dependencies - pip: ${{ env.DEPENDENCIES_FILE }}'
+        run: |
           pip install -r ${{ env.DEPENDENCIES_FILE }}
         
-      - name: Ruff - Linter
+      - name: Linter - Ruff
         run: |
           ruff check solkit
 
-      - name: Ruff - Formatter
+      - name: Formatter - Ruff
         run: |
           ruff format --check
 
-      - name: Pyright - Typecheck
+      - name: Typecheck - Pyright
         run: |
           pyright --verifytypes solkit
+      
+      - name: Test - Pytest - Unit
+        run: |
+          pytest tests/unit
+      
+      # - name: Test - Pytest - Integration
+      #  run: |
+      #    pytest tests/integration
