@@ -22,6 +22,13 @@ DATABASE_INDEXES_NAMING_CONVENTION = {
 }
 
 
+class DatabaseSQLConnectionMode(StrEnum):
+    """Database SQL connection mode."""
+    
+    SINGLE = "single"
+    CLUSTER = "cluster"
+
+
 class DatabaseSQLEcho(Enum):
     """Database PostgreSQL echo."""
     

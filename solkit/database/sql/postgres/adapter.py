@@ -13,7 +13,12 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.sql import text
 
-from ..constants import DATABASE_HEALTHCHECK_QUERY, DatabaseSQLSession
+from ..constants import (
+    DATABASE_HEALTHCHECK_QUERY,
+    DatabaseSQLEcho,
+    DatabaseSQLConnectionMode,
+    DatabaseSQLSession
+)
 from .settings import DatabasePostgresSettings, create_database_postgres_settings
 
 logger = logging.getLogger(__name__)
@@ -51,13 +56,18 @@ class DatabasePostgresAdapter:
     
     @property
     def _async_engine_config(self) -> dict[str, Any]:
+        echo_sql = (
+            self._settings.echo_sql.value 
+            if isinstance(self._settings.echo_sql, DatabaseSQLEcho) 
+            else self._settings.echo_sql
+        )
         return {
             "pool_size": self._settings.pool_size,
             "max_overflow": self._settings.max_overflow,
             "pool_timeout": self._settings.pool_timeout_seconds,
             "pool_pre_ping": self._settings.pool_pre_ping,
             "pool_recycle": self._settings.pool_recycle_seconds,
-            "echo": self._settings.echo_sql.value,
+            "echo": echo_sql,
         }
     
     @property
@@ -69,8 +79,8 @@ class DatabasePostgresAdapter:
             }
         }
 
-    def _create_async_engine(self, uri: URL) -> AsyncEngine:
-        logger.info(f"[ADAPTER][DATABASE][ENGINE][URI: {uri.render_as_string(hide_password=True)}]")
+    def _create_async_engine(self, uri: URL, session_type: DatabaseSQLSession) -> AsyncEngine:
+        logger.info(f"[ADAPTER][DATABASE][CONNECTION URI {session_type.value.upper()}: {uri.render_as_string()}]")
         return create_async_engine(
             url=uri,
             **self._async_engine_config,
@@ -96,16 +106,25 @@ class DatabasePostgresAdapter:
         async with engine.connect() as connection:
             result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
             result = result.scalar()
-        logger.info(f"[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} ACTIVE: {result}]")
-        return result == 1
+            
+        healthy: bool = result == 1
+        logger.info(f"[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} ACTIVE: {healthy}]")
+        
+        return healthy
     
     async def connect(self) -> None:
         """Connect to the database."""
-        self._async_engine_rw = self._create_async_engine(self._settings.build_rw_uri())
+        connection_mode = (
+            DatabaseSQLConnectionMode.SINGLE 
+            if not self._settings.cluster_mode 
+            else DatabaseSQLConnectionMode.CLUSTER
+        )
+        logger.info(f"[ADAPTER][DATABASE][CONNECTION MODE: {connection_mode.value.upper()}]")
+        self._async_engine_rw = self._create_async_engine(self._settings.build_rw_uri(), DatabaseSQLSession.READ_WRITE)
         await self._connection_healthcheck(self._async_engine_rw, DatabaseSQLSession.READ_WRITE)
-        
-        if self._settings.cluster_mode:
-            self._async_engine_ro = self._create_async_engine(self._settings.build_ro_uri())
+
+        if connection_mode == DatabaseSQLConnectionMode.CLUSTER:
+            self._async_engine_ro = self._create_async_engine(self._settings.build_ro_uri(), DatabaseSQLSession.READ_ONLY)
             await self._connection_healthcheck(self._async_engine_ro, DatabaseSQLSession.READ_ONLY)
         
     def _get_engine(self, session_type: DatabaseSQLSession) -> AsyncEngine:
