@@ -7,8 +7,6 @@ from .postgres.adapter import DatabasePostgresAdapter
 from .protocols import DatabaseSQLRepositoryProtocol
 from .repository import DatabaseSQLRepository
 
-# from .sqlite.adapter import DatabaseSQLiteAdapter
-
 __all__ = [
     # Abstracts
     "DatabaseSQLAdapterAbstract",
@@ -20,5 +18,4 @@ __all__ = [
     "DatabaseSQLSession",
     # Adapters
     "DatabasePostgresAdapter",
-    # "DatabaseSQLiteAdapter",
 ]
