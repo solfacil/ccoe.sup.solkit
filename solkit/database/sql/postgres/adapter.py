@@ -56,7 +56,7 @@ class DatabasePostgresAdapter:
     
     @property
     def _async_engine_config(self) -> dict[str, Any]:
-        echo_sql = (
+        echo_sql: str | bool = (
             self._settings.echo_sql.value 
             if isinstance(self._settings.echo_sql, DatabaseSQLEcho) 
             else self._settings.echo_sql
@@ -80,7 +80,7 @@ class DatabasePostgresAdapter:
         }
 
     def _create_async_engine(self, uri: URL, session_type: DatabaseSQLSession) -> AsyncEngine:
-        logger.info(f"[ADAPTER][DATABASE][CONNECTION URI {session_type.value.upper()}: {uri.render_as_string()}]")
+        logger.info(f"[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} URI: {uri.render_as_string()}]")
         return create_async_engine(
             url=uri,
             **self._async_engine_config,
