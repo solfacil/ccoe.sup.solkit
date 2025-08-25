@@ -30,7 +30,7 @@ jobs:
       
       - name: Install dependencies - package[editable]
         run: |
-          pip install -e .
+          pip install -e ".[all]"
         
       - name: Linter - Ruff
         run: |
