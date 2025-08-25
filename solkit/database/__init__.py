@@ -1,6 +1,6 @@
 """Database SQL module."""
 
-import sql
+from . import sql
 
 __all__ = [
     "sql",
