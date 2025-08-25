@@ -27,6 +27,10 @@ jobs:
       - name: 'Install dependencies - pip: ${{ env.DEPENDENCIES_FILE }}'
         run: |
           pip install -r ${{ env.DEPENDENCIES_FILE }}
+      
+      - name: Install dependencies - package[editable]
+        run: |
+          pip install -e .
         
       - name: Linter - Ruff
         run: |
