@@ -1,9 +1,7 @@
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import MetaData
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.types import DateTime
+from sqlalchemy.orm import DeclarativeBase
 
 from ..constants import DATABASE_INDEXES_NAMING_CONVENTION
 
@@ -34,11 +32,3 @@ class BaseModel(DeclarativeBase):
     # def set_table_args(self, values: dict[str, Any]) -> None:
     #     """Update the table arguments for the model."""
     #     self.__table_args__.update(values)
-
-
-class EntityModel(BaseModel):
-    """Entity base model."""
-    __abstract__ = True
-    
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)

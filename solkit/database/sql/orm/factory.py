@@ -4,7 +4,7 @@ from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import UUID, Integer
 
-from solkit.database.sql.orm.model import EntityModel
+from .entity import EntityModel
 
 
 class EntityModelFactory:
@@ -63,7 +63,7 @@ class EntityModelFactory:
     #     return DynamicStringIdModel
     
     @classmethod
-    def multi_column_id(cls, columns: list[str]) -> type[EntityModel]:
+    def multi_column_id(cls, columns: tuple[str, ...]) -> type[EntityModel]:
         """Create an entity model with custom ID type."""
 
         class DynamicCustomIdModel(EntityModel):
