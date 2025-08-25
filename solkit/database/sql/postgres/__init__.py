@@ -4,6 +4,6 @@ from .adapter import DatabasePostgresAdapter
 from .settings import DatabasePostgresSettings
 
 __all__ = [
-    "DatabasePostgresAdapter",
-    "DatabasePostgresSettings",
+    'DatabasePostgresAdapter',
+    'DatabasePostgresSettings',
 ]

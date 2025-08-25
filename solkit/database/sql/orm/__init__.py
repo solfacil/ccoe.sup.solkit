@@ -5,7 +5,7 @@ from .entity import EntityModel
 from .factory import EntityModelFactory
 
 __all__ = [
-    "BaseModel",
-    "EntityModel",
-    "EntityModelFactory",
+    'BaseModel',
+    'EntityModel',
+    'EntityModelFactory',
 ]
