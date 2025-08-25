@@ -24,36 +24,38 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel setuptools virtualenv
       
-      - name: 'Create virtualenv [${{ env.VIRTUALENV_NAME }}]'
+      - name: 'Create virtual environment [virtualenv: ${{ env.VIRTUALENV_NAME }}]'
         run: |
           python -m virtualenv ${{ env.VIRTUALENV_NAME }}
-      
-      - name: 'Activate [${{ env.VIRTUALENV_NAME }}]'
-        run: |
-          echo "VIRTUAL_ENV=${{ env.VIRTUALENV_NAME }}" >> $GITHUB_ENV
 
       - name: 'Install dependencies - pip: ${{ env.DEPENDENCIES_FILE }}'
         run: |
+          source ${{ env.VIRTUALENV_NAME }}/bin/activate
           pip install -r ${{ env.DEPENDENCIES_FILE }}
       
       - name: Install dependencies - package[editable]
         run: |
+          source ${{ env.VIRTUALENV_NAME }}/bin/activate
           pip install -e ".[all]"
         
       - name: Linter - Ruff
         run: |
+          source ${{ env.VIRTUALENV_NAME }}/bin/activate
           ruff check solkit
 
       - name: Formatter - Ruff
         run: |
+          source ${{ env.VIRTUALENV_NAME }}/bin/activate
           ruff format --check
 
       - name: Typecheck - Pyright
         run: |
+          source ${{ env.VIRTUALENV_NAME }}/bin/activate
           pyright --project pyrightconfig.json
       
       - name: Test - Pytest - Unit
         run: |
+          source ${{ env.VIRTUALENV_NAME }}/bin/activate
           pytest tests/unit
       
       # - name: Test - Pytest - Integration
