@@ -3,5 +3,5 @@
 from .repository import BaseRepositoryProtocol
 
 __all__ = [
-    "BaseRepositoryProtocol",
+    'BaseRepositoryProtocol',
 ]
