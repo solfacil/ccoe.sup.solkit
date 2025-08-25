@@ -1,11 +1,12 @@
 import logging
 from asyncio import current_task
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, AsyncGenerator
 
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
+    AsyncConnection,
     AsyncSession,
     async_scoped_session,
     async_sessionmaker,
@@ -139,7 +140,7 @@ class DatabasePostgresAdapter:
     async def get_connection(
         self, 
         session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
-    ):
+    ) -> AsyncGenerator[AsyncConnection, None]:
         """Get a connection from the database."""
         _engine = self._get_engine(session_type)
         
@@ -150,7 +151,7 @@ class DatabasePostgresAdapter:
     async def get_session(
         self, 
         session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
-    ):
+    ) -> AsyncGenerator[AsyncSession, None]:
         """Get a session from the database."""
         _engine = self._get_engine(session_type)
         current_session = async_scoped_session(self._async_session_facrory(_engine), current_task)
@@ -162,10 +163,14 @@ class DatabasePostgresAdapter:
             await current_session.rollback()
             raise
         finally:
-            await current_session.remove()
+            await current_session.close()
 
     async def disconnect(self) -> None:
         """Disconnect from the database."""
         await self._async_engine_rw.dispose()
+        del self._async_engine_rw
+        logger.info("[ADAPTER][DATABASE][RW DISCONNECTED]")
         if self._settings.cluster_mode:
             await self._async_engine_ro.dispose()
+            del self._async_engine_ro
+            logger.info("[ADAPTER][DATABASE][RO DISCONNECTED]")
