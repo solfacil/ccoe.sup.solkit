@@ -13,14 +13,17 @@ from solkit.cache.settings import (
 )
 
 
-@pytest.mark.parametrize("deployment_mode", [
-    pytest.param(CacheDeploymentMode.CLUSTER, id="cluster"),
-    pytest.param(CacheDeploymentMode.SINGLE,  id="single"),
-])
+@pytest.mark.parametrize(
+    'deployment_mode',
+    [
+        pytest.param(CacheDeploymentMode.CLUSTER, id='cluster'),
+        pytest.param(CacheDeploymentMode.SINGLE, id='single'),
+    ],
+)
 def test_valid_deployment_mode(deployment_mode: CacheDeploymentMode) -> None:
     """Test that valid deployment modes are accepted."""
     # arrange
-    with patch.dict(os.environ, {"CACHE_DEPLOYMENT_MODE": deployment_mode.value}):
+    with patch.dict(os.environ, {'CACHE_DEPLOYMENT_MODE': deployment_mode.value}):
         # act
         settings = CacheModeSettings()
     # assert
@@ -30,25 +33,24 @@ def test_valid_deployment_mode(deployment_mode: CacheDeploymentMode) -> None:
 def test_invalid_deployment_mode() -> None:
     """Test that invalid deployment mode raises ValidationError."""
     # arrange
-    with patch.dict(os.environ, {"CACHE_DEPLOYMENT_MODE": "invalid_mode"}), pytest.raises(ValidationError) as exc_info:
+    with patch.dict(os.environ, {'CACHE_DEPLOYMENT_MODE': 'invalid_mode'}), pytest.raises(ValidationError) as exc_info:
         # act
         CacheModeSettings()
     # assert
-    assert "deployment_mode" in str(exc_info.value)
+    assert 'deployment_mode' in str(exc_info.value)
 
 
 def test_valid_settings_with_defaults() -> None:
     """Test that valid settings with defaults work correctly."""
     # arrange
-    with patch.dict(os.environ, {
-        "CACHE_DEPLOYMENT_MODE": CacheDeploymentMode.CLUSTER.value,
-        "CACHE_HOST": "localhost"
-    }):
+    with patch.dict(
+        os.environ, {'CACHE_DEPLOYMENT_MODE': CacheDeploymentMode.CLUSTER.value, 'CACHE_HOST': 'localhost'}
+    ):
         # act
         settings = CacheRedisSettings()
     # assert
     assert settings.deployment_mode == CacheDeploymentMode.CLUSTER
-    assert settings.host == "localhost"
+    assert settings.host == 'localhost'
     assert settings.port == 6379
     assert settings.max_connections == 10
     assert settings.socket_timeout == 5
@@ -62,17 +64,17 @@ def test_build_uri_property() -> None:
     """Test the build_uri property returns correct URI format."""
     # arrange
     environment_variables = {
-        "CACHE_DEPLOYMENT_MODE": CacheDeploymentMode.CLUSTER.value,
-        "CACHE_HOST": "redis.example.com",
-        "CACHE_PORT": "6380",
-        "CACHE_DB": "5"
+        'CACHE_DEPLOYMENT_MODE': CacheDeploymentMode.CLUSTER.value,
+        'CACHE_HOST': 'redis.example.com',
+        'CACHE_PORT': '6380',
+        'CACHE_DB': '5',
     }
-    
+
     with patch.dict(os.environ, environment_variables):
         # act
         settings = CacheRedisSettings()
     # assert
-    expected_uri = "redis://redis.example.com:6380/5"
+    expected_uri = 'redis://redis.example.com:6380/5'
     assert settings.build_uri == expected_uri
 
 
@@ -80,17 +82,17 @@ def test_valid_cluster_settings_with_defaults() -> None:
     """Test that valid cluster settings with defaults work correctly."""
     # arrange
     environment_variables = {
-        "CACHE_DEPLOYMENT_MODE": CacheDeploymentMode.CLUSTER.value,
-        "CACHE_HOST": "redis.example.com",
-        "CACHE_PORT": "6380",
-        "CACHE_DB": "5"
+        'CACHE_DEPLOYMENT_MODE': CacheDeploymentMode.CLUSTER.value,
+        'CACHE_HOST': 'redis.example.com',
+        'CACHE_PORT': '6380',
+        'CACHE_DB': '5',
     }
     with patch.dict(os.environ, environment_variables):
         # act
         settings = CacheRedisClusterSettings()
-    # assert    
+    # assert
     assert settings.deployment_mode == CacheDeploymentMode.CLUSTER
-    assert settings.host == "redis.example.com"
+    assert settings.host == 'redis.example.com'
     assert settings.port == 6380
     assert settings.db == 5
     assert settings.read_from_replicas is True
@@ -100,15 +102,12 @@ def test_valid_cluster_settings_with_defaults() -> None:
 def test_valid_single_node_settings_with_defaults() -> None:
     """Test that valid single node settings with defaults work correctly."""
     # arrange
-    environment_variables = {
-        "CACHE_DEPLOYMENT_MODE": CacheDeploymentMode.SINGLE.value,
-        "CACHE_HOST": "localhost"
-    }
+    environment_variables = {'CACHE_DEPLOYMENT_MODE': CacheDeploymentMode.SINGLE.value, 'CACHE_HOST': 'localhost'}
     with patch.dict(os.environ, environment_variables):
         # act
         settings = CacheRedisSingleNodeSettings()
     # assert
     assert settings.deployment_mode == CacheDeploymentMode.SINGLE
-    assert settings.host == "localhost"
+    assert settings.host == 'localhost'
     assert settings.port == 6379
     assert settings.retry_on_timeout is True

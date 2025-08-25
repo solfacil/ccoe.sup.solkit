@@ -53,10 +53,10 @@ def test_trace_correlation_id_create_then_return_correlation_id() -> None:
     # arrange
     correlation_id = uuid.uuid4()
     context = Context()
-    with patch("uuid.uuid4", return_value=correlation_id):
+    with patch('uuid.uuid4', return_value=correlation_id):
         # act
         result = context.run(create_trace_correlation_id)
-        
+
     # assert
     assert context.run(lambda: trace_correlation_id_context.get()) == str(correlation_id)
     assert result == str(correlation_id)
