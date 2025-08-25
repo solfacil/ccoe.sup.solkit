@@ -1,29 +1,38 @@
 
 # Python Cache - Redis Adapter
 
+## Documentation
+
 [Redis Documentation](https://redis.readthedocs.io/en/stable/index.html#)
+
+[redis-py](https://redis.readthedocs.io/en/stable/connections.html#connecting-to-redis)
 
 ## Usage
 
 ```python
-# cache.py
-from solfacil.cache import RedisClusterAdapter
+# cache/__init__.py
+from solkit.cache import RedisClusterAdapter
 
-redis_adapter = RedicsClusterAdapter.config()
+cache_redis_adapter = RedicsClusterAdapter.config()
 # or
-# redis_adapter = RedicsClusterAdapter.cluster_config()
+cache_redis_adapter = RedicsClusterAdapter.cluster_config()
 # or
-# redis_adapter = RedicsClusterAdapter.single_node_config()
+cache_redis_adapter = RedicsClusterAdapter.single_node_config()
 
 async def get_cache_session():
-    async with redis_adapter.get_session() as cache_session:
+    async with cache_redis_adapter.get_session() as cache_session:
         yield cache_session
 ```
 
 ```python
 # app.py
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
 from cache import cache_redis_adapter
 
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     await cache_redis_adapter.connect()
     yield
@@ -41,16 +50,14 @@ app = application()
 ```python
 # route.py
 from fastapi import APIRouter, Depends
-from solfacil.cache import CacheRepository
+from solkit.cache import CacheRepository
 
 from cache import get_cache_session
 
 router = APIRouter()
 
 @router.get("/example")
-async def example(
-    cache_session = Depends(get_cache_session)
-):
+async def example(cache_session = Depends(get_cache_session)):
     service = ExampleService(CacheRepository(cache_session))
     return await service.process()
 ```
