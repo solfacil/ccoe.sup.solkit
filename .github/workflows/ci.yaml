@@ -38,7 +38,7 @@ jobs:
 
       - name: Typecheck - Pyright
         run: |
-          pyright --verifytypes solkit
+          pyright --project pyrightconfig.json
       
       - name: Test - Pytest - Unit
         run: |

@@ -33,13 +33,13 @@ repos:
         args: ['--configfile', 'bandit.yaml']
 
   # 3. Ruff for linting and formatting
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #  rev: v0.12.7
-  #  hooks:
-  #    - id: ruff-check
-  #      args: ["."]
-  #    - id: ruff-format
-  #      args: ["--check"]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.7
+    hooks:
+      - id: ruff-check
+        args: ["."]
+      - id: ruff-format
+        args: ["--check"]
 
   # 4. Pyright for type checking
   - repo: https://github.com/RobertCraigie/pyright-python
