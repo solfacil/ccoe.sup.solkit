@@ -21,30 +21,30 @@ logger = logging.getLogger(__name__)
 
 class BrokerRepository:
     """Broker repository."""
-    
+
     def __init__(self, adapter: BrokerKafkaAdapter, metadata: dict[str, str] | None = None) -> None:
         """Initialize the broker repository."""
         self._adapter = adapter
         self._common_metadata = metadata
-    
+
     @staticmethod
     def _parse_message_key(key: str | bytes) -> bytes:
         """Parse the message key."""
         if isinstance(key, str):
-            return bytes(key, "utf-8")
+            return bytes(key, 'utf-8')
         return key
-    
+
     @staticmethod
     def _parse_message_value(data: dict[str, Any], metadata: dict[str, str]) -> bytes:
         """Concatenate the data and metadata into a bytes object."""
-        return bytes(json.dumps({"data": data, "metadata": metadata}), "utf-8")
+        return bytes(json.dumps({'data': data, 'metadata': metadata}), 'utf-8')
 
     @staticmethod
     def _unparse_message_value(value: bytes) -> tuple[dict[str, Any], dict[str, str]]:
         """Unparse the value into a tuple of data and metadata."""
-        value_dict: dict = json.loads(value.decode("utf-8"))
-        return value_dict.get("data", {}), value_dict.get("metadata", {})
-    
+        value_dict: dict = json.loads(value.decode('utf-8'))
+        return value_dict.get('data', {}), value_dict.get('metadata', {})
+
     @staticmethod
     def _set_correlation_id() -> list[tuple[str, bytes]]:
         """Set the correlation id in the headers."""
@@ -52,35 +52,35 @@ class BrokerRepository:
         if correlation_id := get_trace_correlation_id():
             headers.append((CORRELATION_ID_HEADER, bytes(correlation_id, 'utf-8')))
         return headers
-    
+
     @staticmethod
     def _get_correlation_id(message: ConsumerRecord) -> str | None:
         """Get the correlation id from the headers."""
         correlation_id = None
         for header in message.headers:
             if header[0] == CORRELATION_ID_HEADER:
-                correlation_id = header[1].decode("utf-8")
+                correlation_id = header[1].decode('utf-8')
                 set_trace_correlation_id(correlation_id)
                 break
         return correlation_id
-    
+
     @staticmethod
     def _next_retry_topic(topic: str, retry_max_times: int) -> str | None:
         """Get the next retry topic."""
         if topic.find(BROKER_RETRY_SUFFIX) == -1 and topic.find(BROKER_DEAD_LETTER_QUEUE_SUFFIX) == -1:
-            return topic + BROKER_RETRY_SUFFIX + "1"
-        
+            return topic + BROKER_RETRY_SUFFIX + '1'
+
         elif topic.find(BROKER_RETRY_SUFFIX) > 0:
             topic_name, retry_attempt = topic.split(BROKER_RETRY_SUFFIX)
             retry_attempt = int(retry_attempt)
 
             if retry_attempt < retry_max_times:
-                return topic_name + BROKER_RETRY_SUFFIX + f"{retry_attempt + 1}"
+                return topic_name + BROKER_RETRY_SUFFIX + f'{retry_attempt + 1}'
             else:
                 return topic_name + BROKER_DEAD_LETTER_QUEUE_SUFFIX
         else:
             return None
-    
+
     def _concat_metadata(self, topic: str, metadata: dict[str, Any] | None) -> dict[str, Any]:
         """Concatenate the metadata."""
         producer_metadata = {topic.lower(): datetime.datetime.now(datetime.UTC).isoformat()}
@@ -89,7 +89,7 @@ class BrokerRepository:
         if metadata:
             producer_metadata.update(metadata)
         return producer_metadata
-    
+
     async def produce(
         self,
         topic: str,
@@ -99,45 +99,45 @@ class BrokerRepository:
     ) -> None:
         """Produce a message to a Kafka topic."""
         producer_metadata = self._concat_metadata(topic, metadata)
-            
+
         await self._adapter.producer.send_and_wait(
-            topic=topic, 
-            key=self._parse_message_key(key), 
-            value=self._parse_message_value(value, producer_metadata), 
+            topic=topic,
+            key=self._parse_message_key(key),
+            value=self._parse_message_value(value, producer_metadata),
             headers=self._set_correlation_id(),
         )
-        logger.info(f"{LOG_PREFIX}[PRODUCE][TOPIC: {topic} - KEY: {key}]")
+        logger.info(f'{LOG_PREFIX}[PRODUCE][TOPIC: {topic} - KEY: {key}]')
 
     async def consume(self, func: Callable[[ConsumerRecord], Awaitable[None]], wait_time: int = 3) -> None:
         """Consume messages from a Kafka topic."""
         async for message in self._adapter.consumer:
             self._get_correlation_id(message)
             try:
-                logger.info(f"{LOG_PREFIX}[CONSUME][TOPIC: {message.topic} - KEY: {message.key}]")
+                logger.info(f'{LOG_PREFIX}[CONSUME][TOPIC: {message.topic} - KEY: {message.key}]')
                 await func(message)
             # except DLQMessageException as err:
             except Exception as err:
-                logger.error(f"{LOG_PREFIX}[CONSUME][ERROR: {err}]")
-                
+                logger.error(f'{LOG_PREFIX}[CONSUME][ERROR: {err}]')
+
                 if next_retry_topic := self._next_retry_topic(
-                        message.topic, 
+                    message.topic,
                     self._adapter._consumer_settings.retry_max_times,  # type: ignore
                 ):
                     logger.info(
-                        f"{LOG_PREFIX}[RETRY][TOPIC: {next_retry_topic} - KEY: {message.key} - WAIT: {wait_time}]"
+                        f'{LOG_PREFIX}[RETRY][TOPIC: {next_retry_topic} - KEY: {message.key} - WAIT: {wait_time}]'
                     )
                     await asyncio.sleep(wait_time)
                     value, metadata = self._unparse_message_value(message.value)  # type: ignore
-                    metadata.update({"error": repr(err)})
+                    metadata.update({'error': repr(err)})
                     await self.produce(
-                        topic=next_retry_topic, 
+                        topic=next_retry_topic,
                         key=message.key,  # type: ignore
-                        value=value, 
+                        value=value,
                         metadata=metadata,
                     )
             finally:
                 await self._adapter.consumer.commit()
-                logger.info(f"{LOG_PREFIX}[COMMIT][TOPIC: {message.topic} - KEY: {message.key}]")
+                logger.info(f'{LOG_PREFIX}[COMMIT][TOPIC: {message.topic} - KEY: {message.key}]')
 
     # async def healthcheck(self) -> None:
     #     producer = await self._adapter._producer.send_and_wait("healthcheck", "healthcheck")
