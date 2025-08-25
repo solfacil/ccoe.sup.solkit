@@ -1,8 +1,10 @@
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
 
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .orm.model import EntityModel
+from .constants import DATABASE_DEFAULT_PAGE_SIZE, DATABASE_DEFAULT_OFFSET, DatabaseSQLSort
+from .orm import EntityModel
 
 
 class DatabaseSQLRepositoryProtocol(Protocol):
@@ -30,4 +32,13 @@ class DatabaseSQLRepositoryProtocol(Protocol):
     
     async def delete(self, data: type[EntityModel]) -> type[EntityModel] | None:
         """Delete a model."""
+        ...
+
+    async def paginate(
+        self,
+        limit: int = DATABASE_DEFAULT_PAGE_SIZE,
+        offset: int = DATABASE_DEFAULT_OFFSET,
+        sort: DatabaseSQLSort | None = None,
+    ) -> Sequence[Row[tuple[EntityModel]]]:
+        """Paginate the database session."""
         ...

@@ -1,19 +1,20 @@
-from typing import Any
+from typing import Any, Sequence
 
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.sql import asc, desc, delete, insert, update
+from sqlalchemy.sql import asc, desc, delete, insert, text, update
 from sqlalchemy.sql.selectable import Select
 
 from .constants import (
     DATABASE_DEFAULT_OFFSET, 
     DATABASE_DEFAULT_PAGE_SIZE, 
     DATABASE_DEFAULT_SORT_COLUMN, 
-    DATABASE_DEFAULT_SORT_TYPE, 
+    DATABASE_DEFAULT_SORT_TYPE,
+    DATABASE_HEALTHCHECK_QUERY,
     DatabaseSQLSort
 )
-from .orm.model import EntityModel
+from .orm import EntityModel
 
 
 class DatabaseSQLRepository:
@@ -32,7 +33,11 @@ class DatabaseSQLRepository:
         """Get a model by id."""
         if self._model is None:
             raise ValueError("Model is not set")
-        stmt = select(self._model).where(self._model.id == model_id)
+        
+        stmt = (
+            select(self._model)
+            .where(self._model.id == model_id)
+        )
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
         return result
@@ -41,7 +46,12 @@ class DatabaseSQLRepository:
         """Insert a model."""
         if self._model is None:
             raise ValueError("Model is not set")
-        stmt = insert(self._model).values(data).returning(self._model)
+        
+        stmt = (
+            insert(self._model)
+            .values(data)
+            .returning(self._model)
+        )
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
         return result
@@ -50,7 +60,13 @@ class DatabaseSQLRepository:
         """Update a model by id."""
         if self._model is None:
             raise ValueError("Model is not set")
-        stmt = update(self._model).where(self._model.id == model_id).values(data).returning(self._model)
+        
+        stmt = (
+            update(self._model)
+            .where(self._model.id == model_id)
+            .values(data)
+            .returning(self._model)
+        )
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
         return result
@@ -59,7 +75,12 @@ class DatabaseSQLRepository:
         """Delete a model."""
         if self._model is None:
             raise ValueError("Model is not set")
-        stmt = delete(self._model).where(self._model.id == model_id).returning(self._model)
+        
+        stmt = (
+            delete(self._model)
+            .where(self._model.id == model_id)
+            .returning(self._model)
+        )
         result = await self._database_session.execute(stmt)
         result = result.one_or_none()
         return result
@@ -67,6 +88,7 @@ class DatabaseSQLRepository:
     async def _set_order_by(self, stmt: Select, sort: DatabaseSQLSort) -> Select:
         if self._model is None:
             raise ValueError("Model is not set")
+        
         columns_and_orders = {
             column_orders.split(':')[0]: column_orders.split(':')[1]
             for column_orders in sort.split(',')
@@ -82,7 +104,7 @@ class DatabaseSQLRepository:
 
         return stmt
     
-    async def _get_page(self, stmt: Select, limit: int, offset: int):
+    async def _get_page(self, stmt: Select, limit: int, offset: int) -> Sequence[Row[tuple[EntityModel]]]:
         stmt = stmt.offset(offset).limit(limit)
         result = await self._database_session.execute(statement=stmt)
         result = result.scalars().all()
@@ -93,7 +115,7 @@ class DatabaseSQLRepository:
         limit: int = DATABASE_DEFAULT_PAGE_SIZE,
         offset: int = DATABASE_DEFAULT_OFFSET,
         sort: DatabaseSQLSort | None = None,
-    ):
+    ) -> Sequence[Row[tuple[EntityModel]]]:
         """Paginate the models."""
         if self._model is None:
             raise ValueError("Model is not set")
@@ -105,9 +127,8 @@ class DatabaseSQLRepository:
     
     async def healthcheck(self) -> tuple[bool, str | None]:
         """Healthcheck the database."""
-        stmt = select(1)
         try:
-            await self._database_session.execute(stmt)
+            await self._database_session.execute(text(DATABASE_HEALTHCHECK_QUERY))
             return True, None
         except Exception as err:
             return False, str(err)
