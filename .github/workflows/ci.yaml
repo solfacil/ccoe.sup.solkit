@@ -30,7 +30,7 @@ jobs:
       
       - name: 'Activate [${{ env.VIRTUALENV_NAME }}]'
         run: |
-          source ${{ env.VIRTUALENV_NAME }}/bin/activate
+          echo "VIRTUAL_ENV=${{ env.VIRTUALENV_NAME }}" >> $GITHUB_ENV
 
       - name: 'Install dependencies - pip: ${{ env.DEPENDENCIES_FILE }}'
         run: |
