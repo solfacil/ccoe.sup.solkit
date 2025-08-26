@@ -1,0 +1,3 @@
+targets = ['solkit']
+exclude_dirs = ['.venv', 'docs', 'tests']
+skips = ['*test_*.py']

@@ -53,7 +53,7 @@ jobs:
       - name: 'Security [Bandit]'
         run: |
           source ${{ env.VIRTUALENV }}/bin/activate
-          bandit --configfile bandit.yaml
+          bandit --configfile bandit.toml -r .
 
       - name: 'Typecheck [Pyright]'
         run: |
