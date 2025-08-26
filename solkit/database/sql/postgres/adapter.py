@@ -72,7 +72,7 @@ class DatabasePostgresAdapter:
         return {
             'server_settings': {
                 'application_name': self._application,
-                'timeout': str(self._settings.connection_timeout_seconds),
+                # 'timeout': str(self._settings.connection_timeout_seconds),
                 # "statement_timeout": str(self._settings.statement_timeout_seconds),
             }
         }

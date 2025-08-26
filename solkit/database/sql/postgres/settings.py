@@ -59,11 +59,11 @@ class DatabasePostgresSettings(BaseSettings):
         description='Database echo pool',
         validation_alias=f'{DATABASE_SETTINGS_PREFIX}_ECHO_POOL',
     )
-    connection_timeout_seconds: int = Field(
-        default=10,
-        description='Database connection timeout seconds',
-        validation_alias=f'{DATABASE_SETTINGS_PREFIX}_CONNECTION_TIMEOUT_SECONDS',
-    )
+    # connection_timeout_seconds: int = Field(
+    #    default=10,
+    #    description='Database connection timeout seconds',
+    #    validation_alias=f'{DATABASE_SETTINGS_PREFIX}_CONNECTION_TIMEOUT_SECONDS',
+    # )
     # statement_timeout_ms: int = Field(
     #     default=30,
     #     description="Database statement timeout seconds",
