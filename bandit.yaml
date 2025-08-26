@@ -1,0 +1,2 @@
+targets: ['solkit']
+exclude_dirs: ['.venv', 'tests']

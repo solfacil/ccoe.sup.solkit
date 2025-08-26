@@ -30,14 +30,14 @@ repos:
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: ['--configfile', 'bandit.toml', '-r', '.']
+        args: ['--configfile', 'bandit.yaml', '--recursive', '.']
 
   # 3. Ruff for linting and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.7
     hooks:
       - id: ruff-check
-        args: [".", "--config", "ruff.toml"]
+        args: ["--config", "ruff.toml"]
       - id: ruff-format
         args: ["--check", "--config", "ruff.toml"]
 
