@@ -35,7 +35,7 @@ jobs:
           source ${{ env.VIRTUALENV }}/bin/activate
           pip install -r ${{ env.REQUIREMENTS_FILE }}
       
-      - name: 'Install package [pip: package self]'
+      - name: 'Install requirements [pip: package self]'
         run: |
           source ${{ env.VIRTUALENV }}/bin/activate
           pip install -e ".[all]"
@@ -43,17 +43,17 @@ jobs:
       - name: 'Linter [Ruff]'
         run: |
           source ${{ env.VIRTUALENV }}/bin/activate
-          ruff check solkit
+          ruff check --config ruff.toml
 
       - name: 'Formatter [Ruff]'
         run: |
           source ${{ env.VIRTUALENV }}/bin/activate
-          ruff format --check
+          ruff format --check --config ruff.toml
       
       - name: 'Security [Bandit]'
         run: |
           source ${{ env.VIRTUALENV }}/bin/activate
-          bandit --configfile bandit.toml -r .
+          bandit --configfile bandit.yaml --recursive .
 
       - name: 'Typecheck [Pyright]'
         run: |
