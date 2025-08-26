@@ -47,7 +47,7 @@ def test_create_common_settings_with_default_values() -> None:
 
     # assert
     assert settings.bootstrap_servers == 'localhost:9092'
-    assert settings.request_timeout_ms == 5000  # default value
+    assert settings.request_timeout_ms == 40000
 
 
 def test_create_common_settings_with_missing_required_field() -> None:
@@ -62,7 +62,7 @@ def test_create_consumer_settings_with_minimum_environment_variables() -> None:
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC',
+        'BROKER_TOPICS': 'test-topic',
         'BROKER_GROUP_ID': 'test-group',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables):
@@ -71,7 +71,7 @@ def test_create_consumer_settings_with_minimum_environment_variables() -> None:
 
     # assert
     assert settings.bootstrap_servers == 'localhost:9092'
-    assert settings.topics == 'TEST-TOPIC'
+    assert settings.topics == 'test-topic'
     assert settings.group_id == 'test-group'
     assert not settings.enable_auto_commit
     assert settings.max_poll_records == 100
@@ -86,7 +86,7 @@ def test_create_consumer_settings_with_all_environment_variables() -> None:
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC,ANOTHER-TOPIC',
+        'BROKER_TOPICS': 'test-topic,another-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_ENABLE_AUTO_COMMIT': 'true',
         'BROKER_MAX_POLL_RECORDS': '200',
@@ -101,7 +101,7 @@ def test_create_consumer_settings_with_all_environment_variables() -> None:
 
     # assert
     assert settings.bootstrap_servers == 'localhost:9092'
-    assert settings.topics == 'TEST-TOPIC,ANOTHER-TOPIC'
+    assert settings.topics == 'test-topic,another-topic'
     assert settings.group_id == 'test-group'
     assert settings.enable_auto_commit
     assert settings.max_poll_records == 200
@@ -111,12 +111,12 @@ def test_create_consumer_settings_with_all_environment_variables() -> None:
     assert settings.retry_max_times == 2
 
 
-def test_consumer_settings_parse_topics() -> None:
+def test_consumer_settings_parse_topics_then_return_list() -> None:
     """Test parsing topics."""
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC,ANOTHER-TOPIC',
+        'BROKER_TOPICS': 'test-topic,another-topic',
         'BROKER_GROUP_ID': 'test-group',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables):
@@ -125,7 +125,7 @@ def test_consumer_settings_parse_topics() -> None:
         parsed_topics = settings._parse_topics(settings.topics)
 
     # assert
-    assert parsed_topics == ['TEST-TOPIC', 'ANOTHER-TOPIC']
+    assert parsed_topics == ['test-topic', 'another-topic']
 
 
 def test_consumer_settings_generate_retry_topics() -> None:
@@ -134,7 +134,7 @@ def test_consumer_settings_generate_retry_topics() -> None:
     retry_max_times = 2
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'SOME-TOPIC',
+        'BROKER_TOPICS': 'some-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_RETRY_MAX_TIMES': str(retry_max_times),
     }
@@ -144,7 +144,7 @@ def test_consumer_settings_generate_retry_topics() -> None:
         retry_topics = settings._generate_retry_topics()
 
     # assert
-    assert retry_topics == ['SOME-TOPIC-RETRY-1', 'SOME-TOPIC-RETRY-2']
+    assert retry_topics == ['some-topic-RETRY-1', 'some-topic-RETRY-2']
 
 
 def test_consumer_settings_generate_dead_letter_queue_topics() -> None:
@@ -152,14 +152,16 @@ def test_consumer_settings_generate_dead_letter_queue_topics() -> None:
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC,ANOTHER-TOPIC',
+        'BROKER_TOPICS': 'test-topic,another-topic',
         'BROKER_GROUP_ID': 'test-group',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables):
-        # act
         settings = BrokerKafkaConsumerSettings()
+        # act
+        dlq_topics = settings._generate_dead_letter_queue_topics()
+
     # assert
-    assert settings.topics == 'TEST-TOPIC,ANOTHER-TOPIC'
+    assert dlq_topics == ['test-topic-DLQ', 'another-topic-DLQ']
 
 
 def test_consumer_settings_get_topics_single_topic() -> None:
@@ -167,17 +169,16 @@ def test_consumer_settings_get_topics_single_topic() -> None:
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC',
+        'BROKER_TOPICS': 'test-topic',
         'BROKER_GROUP_ID': 'test-group',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables):
         settings = BrokerKafkaConsumerSettings()
-
         # act
         topics = settings.get_topics()
 
     # assert
-    expected_topics = ['TEST-TOPIC', 'TEST-TOPIC-DLQ']
+    expected_topics = ['test-topic', 'test-topic-DLQ']
     assert topics == expected_topics
 
 
@@ -186,26 +187,25 @@ def test_consumer_settings_get_topics_multiple_topics_with_retry() -> None:
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'SOME-TOPIC,ANOTHER-TOPIC',
+        'BROKER_TOPICS': 'some-topic,another-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_RETRY_MAX_TIMES': '2',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables):
         settings = BrokerKafkaConsumerSettings()
-
         # act
         topics = settings.get_topics()
 
     # assert
     expected_topics = [
-        'SOME-TOPIC',
-        'ANOTHER-TOPIC',  # original topics
-        'SOME-TOPIC-DLQ',
-        'ANOTHER-TOPIC-DLQ',  # dead letter queue topics
-        'SOME-TOPIC-RETRY-1',
-        'SOME-TOPIC-RETRY-2',  # retry topics for topic 1
-        'ANOTHER-TOPIC-RETRY-1',
-        'ANOTHER-TOPIC-RETRY-2',  # retry topics for topic 2
+        'some-topic',
+        'another-topic',  # original topics
+        'some-topic-DLQ',
+        'another-topic-DLQ',  # dead letter queue topics
+        'some-topic-RETRY-1',
+        'some-topic-RETRY-2',  # retry topics for topic 1
+        'another-topic-RETRY-1',
+        'another-topic-RETRY-2',  # retry topics for topic 2
     ]
     assert topics == expected_topics
 
@@ -215,7 +215,7 @@ def test_consumer_settings_validate_topics_names_valid() -> None:
     # arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'VALID-TOPIC-NAME',
+        'BROKER_TOPICS': 'valid-topic-name',
         'BROKER_GROUP_ID': 'test-group',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables):
@@ -223,15 +223,15 @@ def test_consumer_settings_validate_topics_names_valid() -> None:
         settings = BrokerKafkaConsumerSettings()
 
     # assert
-    assert settings.topics == 'VALID-TOPIC-NAME'
+    assert settings.topics == 'valid-topic-name'
 
 
-def test_consumer_settings_validate_topics_names_invalid_lowercase() -> None:
-    """Test topic name validation with invalid lowercase names."""
+def test_consumer_settings_validate_topics_names_invalid_uppercase_then_raise_error() -> None:
+    """Test topic name validation with invalid uppercase names."""
     # Arrange
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'invalid-topic-name',
+        'BROKER_TOPICS': 'INVALID-TOPIC-NAME',
         'BROKER_GROUP_ID': 'test-group',
     }
     with patch.dict(ENVIRONMENT_PATH, environment_variables), pytest.raises(ValidationError):
@@ -266,22 +266,6 @@ def test_consumer_settings_validate_topics_names_invalid_character(invalid_chara
         BrokerKafkaConsumerSettings()
 
 
-def test_consumer_settings_validate_topics_names_multiple_valid() -> None:
-    """Test topic name validation with multiple valid names."""
-    # arrange
-    environment_variables = {
-        'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'SOME-TOPIC,ANOTHER-TOPIC',
-        'BROKER_GROUP_ID': 'test-group',
-    }
-    with patch.dict(ENVIRONMENT_PATH, environment_variables):
-        # act
-        settings = BrokerKafkaConsumerSettings()
-
-    # assert
-    assert settings.topics == 'SOME-TOPIC,ANOTHER-TOPIC'
-
-
 def test_consumer_settings_validate_topics_names_mixed_valid_invalid() -> None:
     """Test topic name validation with mixed valid and invalid names."""
     # arrange
@@ -301,7 +285,7 @@ def test_consumer_settings_validate_session_pool_timeouts_valid() -> None:
     broker_session_timeout_ms = 90000
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC',
+        'BROKER_TOPICS': 'test-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_MAX_POLL_INTERVAL_MS': str(broker_session_timeout_ms + 1),
         'BROKER_SESSION_TIMEOUT_MS': str(broker_session_timeout_ms),
@@ -321,7 +305,7 @@ def test_consumer_settings_validate_session_pool_timeouts_invalid() -> None:
     broker_session_timeout_ms = 90000
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC',
+        'BROKER_TOPICS': 'test-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_MAX_POLL_INTERVAL_MS': str(broker_session_timeout_ms - 1),
         'BROKER_SESSION_TIMEOUT_MS': str(broker_session_timeout_ms),
@@ -337,7 +321,7 @@ def test_consumer_settings_validate_session_heartbeat_valid() -> None:
     heartbeat_interval_ms = 1000
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC',
+        'BROKER_TOPICS': 'test-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_SESSION_TIMEOUT_MS': str(5 * heartbeat_interval_ms),
         'BROKER_HEARTBEAT_INTERVAL_MS': str(heartbeat_interval_ms),
@@ -357,7 +341,7 @@ def test_consumer_settings_validate_session_heartbeat_invalid() -> None:
     broker_heartbeat_interval_ms = 15000
     environment_variables = {
         'BROKER_BOOTSTRAP_SERVERS': 'localhost:9092',
-        'BROKER_TOPICS': 'TEST-TOPIC',
+        'BROKER_TOPICS': 'test-topic',
         'BROKER_GROUP_ID': 'test-group',
         'BROKER_SESSION_TIMEOUT_MS': str(broker_heartbeat_interval_ms),
         'BROKER_HEARTBEAT_INTERVAL_MS': str(broker_heartbeat_interval_ms),

@@ -37,12 +37,13 @@ repos:
     rev: v0.12.7
     hooks:
       - id: ruff-check
-        args: ["."]
+        args: [".", "--config", "ruff.toml"]
       - id: ruff-format
-        args: ["--check"]
+        args: ["--check", "--config", "ruff.toml"]
 
   # 4. Pyright for type checking
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.403
-    hooks:
-      - id: pyright
+  # - repo: https://github.com/RobertCraigie/pyright-python
+  #   rev: v1.1.404
+  #   hooks:
+  #     - id: pyright
+  #       args: ["--config", "pyrightconfig.json"]

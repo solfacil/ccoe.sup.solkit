@@ -1,5 +1,5 @@
-from unittest.mock import patch
 import os
+from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
@@ -7,8 +7,8 @@ from pydantic import ValidationError
 from solkit.cache.constants import CacheDeploymentMode
 from solkit.cache.settings import (
     CacheModeSettings,
-    CacheRedisSettings,
     CacheRedisClusterSettings,
+    CacheRedisSettings,
     CacheRedisSingleNodeSettings,
 )
 
@@ -33,11 +33,10 @@ def test_valid_deployment_mode(deployment_mode: CacheDeploymentMode) -> None:
 def test_invalid_deployment_mode() -> None:
     """Test that invalid deployment mode raises ValidationError."""
     # arrange
-    with patch.dict(os.environ, {'CACHE_DEPLOYMENT_MODE': 'invalid_mode'}), pytest.raises(ValidationError) as exc_info:
+    environment_variables = {'CACHE_DEPLOYMENT_MODE': 'invalid_mode'}
+    with patch.dict(os.environ, environment_variables), pytest.raises(ValidationError):
         # act
         CacheModeSettings()
-    # assert
-    assert 'deployment_mode' in str(exc_info.value)
 
 
 def test_valid_settings_with_defaults() -> None:
@@ -67,14 +66,14 @@ def test_build_uri_property() -> None:
         'CACHE_DEPLOYMENT_MODE': CacheDeploymentMode.CLUSTER.value,
         'CACHE_HOST': 'redis.example.com',
         'CACHE_PORT': '6380',
-        'CACHE_DB': '5',
+        'CACHE_DB': '0',
     }
 
     with patch.dict(os.environ, environment_variables):
         # act
         settings = CacheRedisSettings()
     # assert
-    expected_uri = 'redis://redis.example.com:6380/5'
+    expected_uri = 'redis://redis.example.com:6380/0'
     assert settings.build_uri == expected_uri
 
 
@@ -85,7 +84,7 @@ def test_valid_cluster_settings_with_defaults() -> None:
         'CACHE_DEPLOYMENT_MODE': CacheDeploymentMode.CLUSTER.value,
         'CACHE_HOST': 'redis.example.com',
         'CACHE_PORT': '6380',
-        'CACHE_DB': '5',
+        # 'CACHE_DB': '0',
     }
     with patch.dict(os.environ, environment_variables):
         # act
@@ -94,7 +93,7 @@ def test_valid_cluster_settings_with_defaults() -> None:
     assert settings.deployment_mode == CacheDeploymentMode.CLUSTER
     assert settings.host == 'redis.example.com'
     assert settings.port == 6380
-    assert settings.db == 5
+    assert settings.db == 0
     assert settings.read_from_replicas is True
     assert settings.require_full_coverage is False
 

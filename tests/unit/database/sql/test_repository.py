@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solkit.database.sql.orm import EntityModel
 from solkit.database.sql.repository import DatabaseSQLRepository
 
 

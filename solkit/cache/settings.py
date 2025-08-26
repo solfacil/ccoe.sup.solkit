@@ -22,6 +22,13 @@ class CacheRedisSettings(CacheModeSettings):
     port: PositiveInt = Field(
         default=6379, description='Redis cluster port number', validation_alias=f'{CACHE_SETTINGS_PREFIX}_PORT'
     )
+    db: PositiveInt = Field(
+        default=0,
+        ge=0,
+        le=15,
+        description='Redis database number (0-15), if cluster db must be 0',
+        validation_alias=f'{CACHE_SETTINGS_PREFIX}_DB',
+    )
     max_connections: PositiveInt = Field(
         default=10,
         description='Maximum number of connections in the pool',
@@ -54,13 +61,13 @@ class CacheRedisSettings(CacheModeSettings):
     @property
     def build_uri(self) -> str:
         """Builds the Redis URI based on the settings."""
-        return f'redis://{self.host}:{self.port}/{self.__getattribute__("db")}'
+        return f'redis://{self.host}:{self.port}/{self.db}'
 
 
 class CacheRedisClusterSettings(CacheRedisSettings):
     """Cache Redis cluster settings."""
 
-    db: int | None = Field(default=0, validation_alias=f'{CACHE_SETTINGS_PREFIX}_DB')
+    db: int = 0
     read_from_replicas: bool = Field(
         default=True,
         description='Allow reading from replica nodes',
@@ -74,9 +81,9 @@ class CacheRedisClusterSettings(CacheRedisSettings):
 
     @field_validator('db')
     @classmethod
-    def validate_cluster_db(cls, value: int | None) -> int | None:
+    def validate_cluster_db(cls, value: int) -> int:
         """Validate the cluster database number."""
-        if value is not None or value != 0:
+        if value != 0:
             raise ValueError("redis.exceptions.RedisClusterException: Argument 'db' must be 0 or None in cluster mode")
         return value
 
@@ -84,13 +91,6 @@ class CacheRedisClusterSettings(CacheRedisSettings):
 class CacheRedisSingleNodeSettings(CacheRedisSettings):
     """Cache Redis single node settings."""
 
-    db: int = Field(
-        default=0,
-        ge=0,
-        le=15,
-        description='Redis database number (0-15)',
-        validation_alias=f'{CACHE_SETTINGS_PREFIX}_DB',
-    )
     retry_on_timeout: bool = Field(
         default=True,
         description='Retry commands on timeout',

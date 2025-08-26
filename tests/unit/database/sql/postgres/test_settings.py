@@ -1,12 +1,12 @@
-from unittest.mock import patch
 import os
+from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.engine import URL
 
 from solkit.database.sql.constants import DatabaseSQLEcho
-from solkit.database.sql.postgres.settings import create_database_postgres_settings, DatabasePostgresSettings
+from solkit.database.sql.postgres.settings import DatabasePostgresSettings, create_database_postgres_settings
 
 
 def test_database_postgresql_settings_with_minimal_required_fields_then_return_correct_values() -> None:
@@ -280,10 +280,8 @@ def test_create_database_postgres_settings_without_host_alias_then_return_defaul
     assert settings.host_rw == 'localhost'
 
 
-def test_create_database_postgres_settings_with_host_alias_then_return_default_validation_aliases_with_custom_prefix() -> (
-    None
-):
-    """Test that create_database_postgres_settings with host_alias returns default validation aliases with custom prefix."""
+def test_create_database_postgres_settings_with_host_alias_then_return_validation_aliases_with_custom_prefix() -> None:
+    """Test that create_database_postgres_settings with host_alias returns validation aliases with custom prefix."""
     # arrange
     host_alias = 'self'
     environment_variables = {
