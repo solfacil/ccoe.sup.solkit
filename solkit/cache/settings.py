@@ -22,7 +22,7 @@ class CacheRedisSettings(CacheModeSettings):
     port: PositiveInt = Field(
         default=6379, description='Redis cluster port number', validation_alias=f'{CACHE_SETTINGS_PREFIX}_PORT'
     )
-    db: PositiveInt = Field(
+    db: int = Field(
         default=0,
         ge=0,
         le=15,
