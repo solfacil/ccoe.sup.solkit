@@ -2,23 +2,22 @@
 
 from .abstracts import DatabaseSQLAdapterAbstract
 from .constants import DatabaseSQLSession
-from .orm.model import EntityModel
+from .orm import BaseModel, EntityModel, EntityModelFactory
 from .postgres.adapter import DatabasePostgresAdapter
 from .protocols import DatabaseSQLRepositoryProtocol
 from .repository import DatabaseSQLRepository
 
-# from .sqlite.adapter import DatabaseSQLiteAdapter
-
 __all__ = [
     # Abstracts
-    "DatabaseSQLAdapterAbstract",
-    "DatabaseSQLRepositoryProtocol",
+    'DatabaseSQLAdapterAbstract',
+    'DatabaseSQLRepositoryProtocol',
     # Common for SQLAlchemy
-    "DatabaseSQLRepository",
-    "EntityModel",
+    'DatabaseSQLRepository',
+    'BaseModel',
+    'EntityModel',
+    'EntityModelFactory',
     # Constants
-    "DatabaseSQLSession",
+    'DatabaseSQLSession',
     # Adapters
-    "DatabasePostgresAdapter",
-    # "DatabaseSQLiteAdapter",
+    'DatabasePostgresAdapter',
 ]

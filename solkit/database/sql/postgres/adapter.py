@@ -1,10 +1,12 @@
 import logging
 from asyncio import current_task
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
     AsyncEngine,
     AsyncSession,
     async_scoped_session,
@@ -13,12 +15,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.sql import text
 
-from ..constants import (
-    DATABASE_HEALTHCHECK_QUERY,
-    DatabaseSQLEcho,
-    DatabaseSQLConnectionMode,
-    DatabaseSQLSession
-)
+from ..constants import DATABASE_HEALTHCHECK_QUERY, DatabaseSQLConnectionMode, DatabaseSQLEcho, DatabaseSQLSession
 from .settings import DatabasePostgresSettings, create_database_postgres_settings
 
 logger = logging.getLogger(__name__)
@@ -26,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 class DatabasePostgresAdapter:
     """Adapter for the database."""
-    
+
     @classmethod
-    def config(cls, application_alias: str, host_alias: str = "self") -> "DatabasePostgresAdapter":
+    def config(cls, application_alias: str, host_alias: str = 'self') -> 'DatabasePostgresAdapter':
         """Config the database cluster."""
         settings = create_database_postgres_settings(host_alias)
         return cls(application_alias, settings())
@@ -39,54 +36,51 @@ class DatabasePostgresAdapter:
         self._settings = settings
         self._async_engine_rw: AsyncEngine
         self._async_engine_ro: AsyncEngine
-        
+
     @property
     def engine_rw(self) -> AsyncEngine:
         """Get the engine."""
-        if not hasattr(self, "_async_engine_rw"):
-            raise RuntimeError("RW Engine not initialized")
+        if not hasattr(self, '_async_engine_rw'):
+            raise RuntimeError('RW Engine not initialized')
         return self._async_engine_rw
-    
+
     @property
     def engine_ro(self) -> AsyncEngine:
         """Get the engine."""
-        if not hasattr(self, "_async_engine_ro"):
-            raise RuntimeError("RO Engine not initialized")
+        if not hasattr(self, '_async_engine_ro'):
+            raise RuntimeError('RO Engine not initialized')
         return self._async_engine_ro
-    
+
     @property
     def _async_engine_config(self) -> dict[str, Any]:
         echo_sql: str | bool = (
-            self._settings.echo_sql.value 
-            if isinstance(self._settings.echo_sql, DatabaseSQLEcho) 
+            self._settings.echo_sql.value
+            if isinstance(self._settings.echo_sql, DatabaseSQLEcho)
             else self._settings.echo_sql
         )
         return {
-            "pool_size": self._settings.pool_size,
-            "max_overflow": self._settings.max_overflow,
-            "pool_timeout": self._settings.pool_timeout_seconds,
-            "pool_pre_ping": self._settings.pool_pre_ping,
-            "pool_recycle": self._settings.pool_recycle_seconds,
-            "echo": echo_sql,
+            'pool_size': self._settings.pool_size,
+            'max_overflow': self._settings.max_overflow,
+            'pool_timeout': self._settings.pool_timeout_seconds,
+            'pool_pre_ping': self._settings.pool_pre_ping,
+            'pool_recycle': self._settings.pool_recycle_seconds,
+            'echo': echo_sql,
         }
-    
+
     @property
-    def _connection_args(self) -> dict[str, dict[str, str]]:
+    def _connection_args(self) -> dict[str, dict[str, str | int]]:
         return {
-            "server_settings": {
-                "application_name": self._application,
-                "statement_timeout": str(self._settings.statement_timeout_seconds),
+            'server_settings': {
+                'application_name': self._application,
+                # 'timeout': str(self._settings.connection_timeout_seconds),
+                # "statement_timeout": str(self._settings.statement_timeout_seconds),
             }
         }
 
     def _create_async_engine(self, uri: URL, session_type: DatabaseSQLSession) -> AsyncEngine:
-        logger.info(f"[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} URI: {uri.render_as_string()}]")
-        return create_async_engine(
-            url=uri,
-            **self._async_engine_config,
-            connect_args=self._connection_args
-        )
-       
+        logger.info(f'[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} URI: {uri.render_as_string()}]')
+        return create_async_engine(url=uri, **self._async_engine_config, connect_args=self._connection_args)
+
     def _async_session_facrory(self, async_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
         return async_sessionmaker(
             bind=async_engine,
@@ -94,62 +88,56 @@ class DatabasePostgresAdapter:
             autoflush=False,
             expire_on_commit=False,
             autocommit=False,
-            future=True
+            future=True,
         )
-    
+
     async def _connection_healthcheck(self, engine: AsyncEngine, session_type: DatabaseSQLSession) -> bool:
         """Test the engine connection with the connection pool and with the database host.
-        
+
         The engine.connect() validate if the pool is active.
         The connection.execute() validate if the connection is active.
         """
         async with engine.connect() as connection:
             result = await connection.execute(text(DATABASE_HEALTHCHECK_QUERY))
             result = result.scalar()
-            
+
         healthy: bool = result == 1
-        logger.info(f"[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} ACTIVE: {healthy}]")
-        
+        logger.info(f'[ADAPTER][DATABASE][CONNECTION {session_type.value.upper()} ACTIVE: {healthy}]')
+
         return healthy
-    
+
     async def connect(self) -> None:
         """Connect to the database."""
         connection_mode = (
-            DatabaseSQLConnectionMode.SINGLE 
-            if not self._settings.cluster_mode 
-            else DatabaseSQLConnectionMode.CLUSTER
+            DatabaseSQLConnectionMode.SINGLE if not self._settings.cluster_mode else DatabaseSQLConnectionMode.CLUSTER
         )
-        logger.info(f"[ADAPTER][DATABASE][CONNECTION MODE: {connection_mode.value.upper()}]")
+        logger.info(f'[ADAPTER][DATABASE][CONNECTION MODE: {connection_mode.value.upper()}]')
         self._async_engine_rw = self._create_async_engine(self._settings.build_rw_uri(), DatabaseSQLSession.READ_WRITE)
         await self._connection_healthcheck(self._async_engine_rw, DatabaseSQLSession.READ_WRITE)
 
         if connection_mode == DatabaseSQLConnectionMode.CLUSTER:
-            self._async_engine_ro = self._create_async_engine(self._settings.build_ro_uri(), DatabaseSQLSession.READ_ONLY)
+            self._async_engine_ro = self._create_async_engine(
+                self._settings.build_ro_uri(), DatabaseSQLSession.READ_ONLY
+            )
             await self._connection_healthcheck(self._async_engine_ro, DatabaseSQLSession.READ_ONLY)
-        
+
     def _get_engine(self, session_type: DatabaseSQLSession) -> AsyncEngine:
-        return (
-            self._async_engine_rw 
-            if session_type == DatabaseSQLSession.READ_WRITE 
-            else self._async_engine_ro
-        )
-    
+        return self._async_engine_rw if session_type == DatabaseSQLSession.READ_WRITE else self._async_engine_ro
+
     @asynccontextmanager
     async def get_connection(
-        self, 
-        session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
-    ):
+        self, session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
+    ) -> AsyncGenerator[AsyncConnection, None]:
         """Get a connection from the database."""
         _engine = self._get_engine(session_type)
-        
+
         async with _engine.connect() as connection, connection.begin():
             yield connection
-    
+
     @asynccontextmanager
     async def get_session(
-        self, 
-        session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
-    ):
+        self, session_type: DatabaseSQLSession = DatabaseSQLSession.READ_WRITE
+    ) -> AsyncGenerator[AsyncSession, None]:
         """Get a session from the database."""
         _engine = self._get_engine(session_type)
         current_session = async_scoped_session(self._async_session_facrory(_engine), current_task)
@@ -157,14 +145,18 @@ class DatabasePostgresAdapter:
             yield current_session()
             await current_session.commit()
         except Exception as err:
-            logger.error(f"[ADAPTER][DATABASE][SESSION ROLLBACK][ERROR]: {err}")
+            logger.error(f'[ADAPTER][DATABASE][SESSION ROLLBACK][ERROR]: {err}')
             await current_session.rollback()
             raise
         finally:
-            await current_session.remove()
+            await current_session.close()
 
     async def disconnect(self) -> None:
         """Disconnect from the database."""
         await self._async_engine_rw.dispose()
+        del self._async_engine_rw
+        logger.info('[ADAPTER][DATABASE][RW DISCONNECTED]')
         if self._settings.cluster_mode:
             await self._async_engine_ro.dispose()
+            del self._async_engine_ro
+            logger.info('[ADAPTER][DATABASE][RO DISCONNECTED]')

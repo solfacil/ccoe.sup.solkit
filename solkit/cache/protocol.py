@@ -1,31 +1,49 @@
 from typing import Any, Protocol, runtime_checkable
 
-from redis.asyncio.cluster import RedisCluster
 from redis.asyncio.client import Redis
+from redis.asyncio.cluster import RedisCluster
 
 
 @runtime_checkable
 class CacheRepositoryProtocol(Protocol):
-    def __init__(self, cache_session: RedisCluster | Redis) -> None:
+    """Cache repository protocol."""
+
+    def __init__(self, cache_session: Redis | RedisCluster) -> None:
+        """Initialize the cache repository."""
         ...
-    
-    async def set(self, key: str, value: Any) -> bool:
+
+    async def set_key(self, key: str, value: str, ttl: int | None = None) -> bool:
+        """Set a value in the cache."""
         ...
-    
-    async def get(self, key: str) -> None | Any:
+
+    async def get_key(self, key: str) -> str | None:
+        """Get a value from the cache."""
         ...
-    
-    async def delete(self, keys: list[str]) -> int:
+
+    async def exists_key(self, *keys: str) -> bool:
+        """Check if a value exists in the cache."""
         ...
-    
-    async def exists(self, keys: list[str]) -> int:
+
+    async def delete_key(self, *keys: str) -> bool:
+        """Delete a value from the cache."""
         ...
-    
-    async def expire(self, key: str, time: int) -> bool:
+
+    async def set_hash(self, name: str, mapping: dict[str, Any], ttl: int | None = None) -> bool:
+        """Set a hash in the cache."""
         ...
-    
-    async def ttl(self, key: str) -> int:
+
+    async def get_hash(self, name: str, field: str) -> str | None:
+        """Get a hash from the cache."""
         ...
-    
+
+    async def exists_hash(self, name: str, field: str) -> bool:
+        """Check if a hash exists in the cache."""
+        ...
+
+    async def delete_hash(self, name: str, field: str) -> bool:
+        """Delete a hash from the cache."""
+        ...
+
     async def healthcheck(self) -> tuple[bool, str | None]:
+        """Check the health of the cache."""
         ...

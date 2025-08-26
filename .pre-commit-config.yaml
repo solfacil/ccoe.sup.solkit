@@ -30,19 +30,20 @@ repos:
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: ['--configfile', 'bandit.yaml']
+        args: ['--configfile', 'bandit.yaml', '--recursive', '.']
 
   # 3. Ruff for linting and formatting
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #  rev: v0.12.7
-  #  hooks:
-  #    - id: ruff-check
-  #      args: ["."]
-  #    - id: ruff-format
-  #      args: ["--check"]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.7
+    hooks:
+      - id: ruff-check
+        args: ["--config", "ruff.toml"]
+      - id: ruff-format
+        args: ["--check", "--config", "ruff.toml"]
 
   # 4. Pyright for type checking
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.403
-    hooks:
-      - id: pyright
+  # - repo: https://github.com/RobertCraigie/pyright-python
+  #   rev: v1.1.404
+  #   hooks:
+  #     - id: pyright
+  #       args: ["--config", "pyrightconfig.json"]

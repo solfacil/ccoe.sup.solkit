@@ -71,7 +71,7 @@ application         | INFO:__main__:Starting consumer
 application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][BOOTSTRAP SERVERS: kafka-broker-one:9092,kafka-broker-two:9093,kafka-broker-three:9094]
 application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][ACKS: all]
 application         | INFO:solkit.broker.adapter:[ADAPTER][BROKER][GROUP ID: app]
-application         | INFO:aiokafka.consumer.subscription_state:Updating subscribed topics to: frozenset({'TEST-DLQ', 'TEST', 'TEST-RETRY-1', 'TEST-RETRY-2', 'TEST-RETRY-3'})
+application         | INFO:aiokafka.consumer.subscription_state:Updating subscribed topics to: frozenset({'test-DLQ', 'test', 'test-RETRY-1', 'test-RETRY-2', 'test-RETRY-3'})
 ```
 
 ## Configuration

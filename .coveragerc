@@ -1,7 +1,7 @@
 [run]
 source = solkit
 omit = 
-    */tests/*
+    tests/*
     */test_*
     */__pycache__/*
     */.venv/*

@@ -1,6 +1,11 @@
 from enum import StrEnum
 
+CACHE_SETTINGS_PREFIX = 'CACHE'
+CACHE_PROTOCOL = 'redis://'
 
-class CacheRedisMode(StrEnum):
-    CLUSTER = "cluster"
-    SINGLE_NODE = "single_node"
+
+class CacheDeploymentMode(StrEnum):
+    """Cache deployment mode."""
+
+    CLUSTER = 'cluster'
+    SINGLE = 'single'

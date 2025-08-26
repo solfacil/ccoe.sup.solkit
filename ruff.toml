@@ -20,4 +20,7 @@ format.docstring-code-format = true
 format.docstring-code-line-length = 60
 
 [lint.per-file-ignores]
-"tests/**/*.py" = ["S101"]  # Ignore assert statements in test files
+"tests/**/*.py" = [
+    "S101",  # Ignore assert statements in test files
+    "D104"
+]

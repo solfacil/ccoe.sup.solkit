@@ -1,7 +1,11 @@
 """SQL ORM module."""
 
-from .model import BaseModel
+from .base import BaseModel
+from .entity import EntityModel
+from .factory import EntityModelFactory
 
 __all__ = [
-    "BaseModel",
+    'BaseModel',
+    'EntityModel',
+    'EntityModelFactory',
 ]
