@@ -28,14 +28,15 @@ RUN mkdir -p -m 0600 ~/.ssh \
 
 ```bash
 # from branch
-pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main
+pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main
 
 # from release
 
 # with extras
+pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main#egg=solkit[all]
 ```
 
-### With `Poetry`
+### With `poetry`
 
 ```bash
 # from branch
@@ -44,11 +45,22 @@ poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
 # from release
 
 # with extras
+poetry add 'solkit[all]@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
 ```
 
 > [!IMPORTANT]
-> Avaliable paackge extras:
-> `cache`, `broker`, `all`
+> Avaliable packge extras:
+> `cache`, `broker`, `postgres`, `all`
+
+## Uninstall
+
+```bash
+# pip
+pip uninstall solkit
+
+# poetry
+poetry remove solkit
+```
 
 ## Development
 
@@ -58,7 +70,7 @@ poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
 # update package manager
 pip install --upgrade pip wheels virtualenv
 
-# create witrualenv
+# create virtual environment
 virtualenv .venv
 
 # enable virtualenv
