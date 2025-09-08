@@ -5,6 +5,25 @@ Solfacil Python Package with Resusable Code.
 
 ## Installation
 
+### CI/CD Requirements
+
+Your application image must have access to SSH to authenticate with GitHub.
+
+```dockerfile
+# Dockerfile
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl git ssh \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p -m 0600 ~/.ssh \
+    && echo "Host *" >> ~/.ssh/config \
+    && echo "   StrictHostKeyChecking no" >> ~/.ssh/config \
+    && ssh-keyscan github.com >> ~/.ssh/known_hosts
+```
+
 ### With `pip`
 
 ```bash
