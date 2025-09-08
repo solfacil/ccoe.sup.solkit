@@ -1,7 +1,8 @@
 
-# Solkit
+# 🧰 Solkit
 
-Solfacil Python Package with Resusable Code.
+This package was developed to provide simple and fast dependencies instrumentation, 
+as a handy SDK for the developer’s daily work.
 
 ## Installation
 
