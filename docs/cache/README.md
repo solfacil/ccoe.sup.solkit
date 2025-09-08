@@ -13,7 +13,7 @@
 # cache/__init__.py
 from solkit.cache import RedisClusterAdapter
 
-cache_redis_adapter = RedicsClusterAdapter.config()
+cache_redis_adapter = RedicsClusterAdapter.config()  # required: CACHE_DEPLOYMENT_MODE
 # or
 cache_redis_adapter = RedicsClusterAdapter.cluster_config()
 # or
