@@ -8,7 +8,7 @@ as a handy SDK for the developer’s daily work.
 
 ### CI/CD Requirements
 
-Your application image must have access to SSH to authenticate with GitHub.
+Your image build must have access to SSH to authenticate with GitHub.
 
 ```dockerfile
 # Dockerfile
