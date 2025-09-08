@@ -25,6 +25,9 @@ RUN mkdir -p -m 0600 ~/.ssh \
     && ssh-keyscan github.com >> ~/.ssh/known_hosts
 ```
 
+> [!WARNING]
+> Always use multi-stage docker when using the SSH Agent or remove it before the image build ends, it's a security breach
+
 ### With `pip`
 
 ```bash
