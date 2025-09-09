@@ -13,7 +13,7 @@
 # cache/__init__.py
 from solkit.cache import RedisClusterAdapter
 
-cache_redis_adapter = RedicsClusterAdapter.config()
+cache_redis_adapter = RedicsClusterAdapter.config()  # required: CACHE_DEPLOYMENT_MODE
 # or
 cache_redis_adapter = RedicsClusterAdapter.cluster_config()
 # or
@@ -68,7 +68,7 @@ Expected logs for Single Node configuration
 application        | INFO:     Started server process [1]
 application        | INFO:     Waiting for application startup.
 application        | INFO:solkit.cache.adapter:[ADAPTER][CACHE][CONNECTION URI: redis://redis-single-node:6379/1]
-application        | INFO:solkit.cache.adapter:[ADAPTER][CACHE][CONNECTION MODE: SINGLE_NODE]
+application        | INFO:solkit.cache.adapter:[ADAPTER][CACHE][CONNECTION MODE: SINGLE]
 application        | INFO:solkit.cache.adapter:[ADAPTER][CACHE][CONNECTION ACTIVE: True]
 application        | INFO:solkit.cache.adapter:[ADAPTER][CACHE][CONNECTION POOL ACTIVE: [<redis.asyncio.connection.Connection(host=redis-single-node,port=6379,db=1)>]]
 application        | INFO:     Application startup complete.
@@ -92,7 +92,7 @@ application        | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTR
 
 | Parameter              | Environment Variable         | Definition                                |
 |------------------------|------------------------------|-------------------------------------------|
-| deployment_mode        | CACHE_DEPLOYMENT_MODE        | cluster or single_node                    |
+| deployment_mode        | CACHE_DEPLOYMENT_MODE        | cluster or single                         |
 
 | Parameter              | Environment Variable         | Definition                                |
 |------------------------|------------------------------|-------------------------------------------|
