@@ -3,6 +3,7 @@ from typing import Self
 from pydantic import Field, field_validator, model_validator
 from pydantic.types import PositiveInt
 from pydantic_settings import BaseSettings
+from redis.cluster import LoadBalancingStrategy
 
 from .constants import CACHE_SETTINGS_PREFIX, CacheDeploymentMode
 
@@ -91,10 +92,10 @@ class CacheRedisClusterSettings(CacheRedisSettings):
     """Cache Redis cluster settings."""
 
     db: int = 0
-    read_from_replicas: bool = Field(
-        default=True,
-        description='Allow reading from replica nodes',
-        validation_alias=f'{CACHE_SETTINGS_PREFIX}_READ_FROM_REPLICAS',
+    load_balancing_strategy: LoadBalancingStrategy = Field(
+        default=LoadBalancingStrategy.ROUND_ROBIN,
+        description='Load balancing strategy',
+        validation_alias=f'{CACHE_SETTINGS_PREFIX}_LOAD_BALANCING_STRATEGY',
     )
     require_full_coverage: bool = Field(
         default=False,

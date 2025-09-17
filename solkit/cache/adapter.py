@@ -78,7 +78,7 @@ class CacheRedisAdapter:
         cluster_config = {
             **self.__common_config,
             **self.__retry_config,
-            'read_from_replicas': self._settings.read_from_replicas,  # type: ignore
+            'load_balancing_strategy': self._settings.load_balancing_strategy,  # type: ignore
             'require_full_coverage': self._settings.require_full_coverage,  # type: ignore
         }
         return cluster_config
