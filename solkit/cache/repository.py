@@ -1,8 +1,12 @@
 import json
+import logging
 from typing import Any
 
 from redis.asyncio.client import Redis
 from redis.asyncio.cluster import RedisCluster
+from redis.exceptions import RedisError
+
+logger = logging.getLogger(__name__)
 
 
 class CacheRepository:
@@ -34,10 +38,26 @@ class CacheRepository:
             await self._cache_session.expire(key, ttl)
         return result
 
+    async def try_set_key(self, key: str, value: str, ttl: int | None = None) -> bool:
+        """Try to set a value in the cache."""
+        try:
+            return await self.set_key(key, value, ttl)
+        except RedisError as err:
+            logger.error(f'[REPOSITORY][CACHE][TRY SET KEY key={key}] {err}')
+            return False
+
     async def get_key(self, key: str) -> str | None:
         """Get a value from the cache."""
         result = await self._cache_session.get(key)
         return self._decode(result) if result else None
+
+    async def try_get_key(self, key: str) -> str | None:
+        """Try to get a value from the cache."""
+        try:
+            return await self.get_key(key)
+        except RedisError as err:
+            logger.error(f'[REPOSITORY][CACHE][TRY GET KEY key={key}] {err}')
+            return None
 
     async def exists_key(self, *keys: str) -> bool:
         """Check if a value exists in the cache."""
@@ -56,10 +76,26 @@ class CacheRepository:
             await self._cache_session.expire(name, ttl)
         return result > 0
 
+    async def try_set_hash(self, name: str, mapping: dict[str, Any], ttl: int | None = None) -> bool:
+        """Try to set a hash in the cache."""
+        try:
+            return await self.set_hash(name, mapping, ttl)
+        except RedisError as err:
+            logger.error(f'[REPOSITORY][CACHE][TRY SET HASH name={name}] {err}')
+            return False
+
     async def get_hash(self, name: str, field: str) -> str | None:
         """Get a hash from the cache."""
         result = await self._cache_session.hget(name, field)  # type: ignore
         return self._decode(result) if result else None  # type: ignore
+
+    async def try_get_hash(self, name: str, field: str) -> str | None:
+        """Try to get a hash from the cache."""
+        try:
+            return await self.get_hash(name, field)
+        except RedisError as err:
+            logger.error(f'[REPOSITORY][CACHE][TRY GET HASH name={name}] {err}')
+            return None
 
     async def exists_hash(self, name: str, field: str) -> bool:
         """Check if a hash exists in the cache."""
@@ -70,10 +106,14 @@ class CacheRepository:
         result = await self._cache_session.hdel(name, field)  # type: ignore
         return result > 0
 
+    async def set_ttl(self, name: str, ttl: int) -> bool:
+        """Set the ttl of a value in the cache."""
+        return await self._cache_session.expire(name, ttl)
+
     async def healthcheck(self) -> tuple[bool, str | None]:
         """Check the health of the cache."""
         try:
             await self._cache_session.ping()
             return True, None
-        except Exception as e:
-            return False, str(e)
+        except Exception as err:
+            return False, str(err)
