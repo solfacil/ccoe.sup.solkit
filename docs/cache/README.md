@@ -45,7 +45,6 @@
 
 ## Simple Usage
 
-
 ```python
 # cache/__init__.py
 from solkit.cache import RedisClusterAdapter
