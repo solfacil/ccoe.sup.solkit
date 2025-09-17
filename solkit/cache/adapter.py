@@ -100,7 +100,7 @@ class CacheRedisAdapter:
 
     async def connect(self) -> None:
         """Connect to the cache."""
-        logger.info(f'[ADAPTER][CACHE][CONNECTION URI: {self._settings.build_uri}]')
+        logger.info(f'[ADAPTER][CACHE][CONNECTION URI: {self._settings.build_uri_hidden_password}]')
         logger.info(f'[ADAPTER][CACHE][CONNECTION MODE: {self._settings.deployment_mode.value.upper()}]')
         if self._settings.deployment_mode == CacheDeploymentMode.CLUSTER:
             self.__create_cluster_connection()
