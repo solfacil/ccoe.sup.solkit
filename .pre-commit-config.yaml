@@ -42,8 +42,8 @@ repos:
         args: ["--check", "--config", "ruff.toml"]
 
   # 4. Pyright for type checking
-  # - repo: https://github.com/RobertCraigie/pyright-python
-  #   rev: v1.1.404
-  #   hooks:
-  #     - id: pyright
-  #       args: ["--config", "pyrightconfig.json"]
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.404
+    hooks:
+      - id: pyright
+        args: ["--project", "pyrightconfig.json"]

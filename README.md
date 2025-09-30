@@ -35,6 +35,7 @@ RUN mkdir -p -m 0600 ~/.ssh \
 pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main
 
 # from release
+pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@X.X.X
 
 # with extras
 pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main#egg=solkit[all]
@@ -47,6 +48,7 @@ pip install git+https://git@github.com/solfacil/ccoe.sup.solkit.git@main#egg=sol
 poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
 
 # from release
+poetry add 'solkit@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#X.X.X'
 
 # with extras
 poetry add 'solkit[all]@git+https://git@github.com/solfacil/ccoe.sup.solkit.git#main'
@@ -72,13 +74,19 @@ poetry remove solkit
 
 ```bash
 # update package manager
-pip install --upgrade pip wheels virtualenv
+python -m pip install --upgrade pip wheel setuptools virtualenv
 
 # create virtual environment
 virtualenv .venv
 
 # enable virtualenv
 .venv/bin/activate
+```
+
+### Enable Pre Commit Hooks
+
+```bash
+pre-commit install
 ```
 
 ### Install dependencies

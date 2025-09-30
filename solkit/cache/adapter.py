@@ -19,29 +19,32 @@ class CacheRedisAdapter:
     """Cache redis adapter."""
 
     @classmethod
-    def single_node_config(cls) -> 'CacheRedisAdapter':
+    def single_node_config(cls, application_alias: str) -> 'CacheRedisAdapter':
         """Create a single node cache adapter."""
         settings = CacheRedisSingleNodeSettings()
-        return cls(settings)
+        return cls(settings, application_alias)
 
     @classmethod
-    def cluster_config(cls) -> 'CacheRedisAdapter':
+    def cluster_config(cls, application_alias: str) -> 'CacheRedisAdapter':
         """Create a cluster cache adapter."""
         settings = CacheRedisClusterSettings()
-        return cls(settings)
+        return cls(settings, application_alias)
 
     @classmethod
-    def config(cls) -> 'CacheRedisAdapter':
+    def config(cls, application_alias: str) -> 'CacheRedisAdapter':
         """Create a cache adapter based on the deployment mode."""
         cache_mode_settings = CacheModeSettings()
         return (
-            cls.cluster_config()
+            cls.cluster_config(application_alias)
             if cache_mode_settings.deployment_mode == CacheDeploymentMode.CLUSTER
-            else cls.single_node_config()
+            else cls.single_node_config(application_alias)
         )
 
-    def __init__(self, settings: CacheRedisClusterSettings | CacheRedisSingleNodeSettings) -> None:
+    def __init__(
+        self, settings: CacheRedisClusterSettings | CacheRedisSingleNodeSettings, application_alias: str
+    ) -> None:
         """Initialize the cache adapter."""
+        self._application_alias = application_alias
         self._connection_pool: ConnectionPool
         self._single_node_connection: Redis
         self._cluster_connection: RedisCluster
@@ -66,6 +69,7 @@ class CacheRedisAdapter:
             'socket_connect_timeout': self._settings.socket_connect_timeout,
             'max_connections': self._settings.max_connections,
             'health_check_interval': self._settings.health_check_interval,
+            'client_name': self._application_alias,
         }
         return common_config
 
@@ -74,7 +78,7 @@ class CacheRedisAdapter:
         cluster_config = {
             **self.__common_config,
             **self.__retry_config,
-            'read_from_replicas': self._settings.read_from_replicas,  # type: ignore
+            'load_balancing_strategy': self._settings.load_balancing_strategy,  # type: ignore
             'require_full_coverage': self._settings.require_full_coverage,  # type: ignore
         }
         return cluster_config
@@ -96,7 +100,7 @@ class CacheRedisAdapter:
 
     async def connect(self) -> None:
         """Connect to the cache."""
-        logger.info(f'[ADAPTER][CACHE][CONNECTION URI: {self._settings.build_uri}]')
+        logger.info(f'[ADAPTER][CACHE][CONNECTION URI: {self._settings.build_uri_hidden_password}]')
         logger.info(f'[ADAPTER][CACHE][CONNECTION MODE: {self._settings.deployment_mode.value.upper()}]')
         if self._settings.deployment_mode == CacheDeploymentMode.CLUSTER:
             self.__create_cluster_connection()

@@ -1,6 +1,9 @@
-from pydantic import Field, field_validator
+from typing import Self
+
+from pydantic import Field, field_validator, model_validator
 from pydantic.types import PositiveInt
 from pydantic_settings import BaseSettings
+from redis.cluster import LoadBalancingStrategy
 
 from .constants import CACHE_SETTINGS_PREFIX, CacheDeploymentMode
 
@@ -16,6 +19,12 @@ class CacheModeSettings(BaseSettings):
 class CacheRedisSettings(CacheModeSettings):
     """Cache Redis settings."""
 
+    username: str | None = Field(
+        default=None, description='Redis username', validation_alias=f'{CACHE_SETTINGS_PREFIX}_USERNAME'
+    )
+    password: str | None = Field(
+        default=None, description='Redis password', validation_alias=f'{CACHE_SETTINGS_PREFIX}_PASSWORD'
+    )
     host: str = Field(
         default=..., description='Redis cluster host address', validation_alias=f'{CACHE_SETTINGS_PREFIX}_HOST'
     )
@@ -26,7 +35,7 @@ class CacheRedisSettings(CacheModeSettings):
         default=0,
         ge=0,
         le=15,
-        description='Redis database number (0-15), if cluster db must be 0',
+        description='Redis database number (0-15) for single node, if cluster db must not be set',
         validation_alias=f'{CACHE_SETTINGS_PREFIX}_DB',
     )
     max_connections: PositiveInt = Field(
@@ -61,17 +70,32 @@ class CacheRedisSettings(CacheModeSettings):
     @property
     def build_uri(self) -> str:
         """Builds the Redis URI based on the settings."""
-        return f'redis://{self.host}:{self.port}/{self.db}'
+        uri = f'{self.host}:{self.port}/{self.db}'
+        if self.username and self.password:
+            uri = f'{self.username}:{self.password}@{uri}'
+        return f'redis://{uri}'
+
+    @property
+    def build_uri_hidden_password(self) -> str:
+        """Builds the Redis URI with password based on the settings."""
+        return self.build_uri.replace(self.password, '****') if self.password else self.build_uri
+
+    @model_validator(mode='after')
+    def validate_cache_user_and_password(self) -> Self:
+        """Validate that the username and password are provided together."""
+        if (not self.username and not self.password) or (self.username and self.password):
+            return self
+        raise ValueError('Environment variable CACHE_PASSWORD must be provided when CACHE_USERNAME is provided')
 
 
 class CacheRedisClusterSettings(CacheRedisSettings):
     """Cache Redis cluster settings."""
 
     db: int = 0
-    read_from_replicas: bool = Field(
-        default=True,
-        description='Allow reading from replica nodes',
-        validation_alias=f'{CACHE_SETTINGS_PREFIX}_READ_FROM_REPLICAS',
+    load_balancing_strategy: LoadBalancingStrategy = Field(
+        default=LoadBalancingStrategy.ROUND_ROBIN,
+        description='Load balancing strategy',
+        validation_alias=f'{CACHE_SETTINGS_PREFIX}_LOAD_BALANCING_STRATEGY',
     )
     require_full_coverage: bool = Field(
         default=False,
